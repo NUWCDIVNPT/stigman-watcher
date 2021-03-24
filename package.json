@@ -1,0 +1,19 @@
+{
+  "name": "stigman-watcher",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "atob": "^2.1.2",
+    "axios": "^0.21.1",
+    "chokidar": "^3.5.1",
+    "fast-xml-parser": "^3.19.0",
+    "got": "^11.8.2",
+    "he": "^1.2.0"
+  }
+}
