@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 
-
-
 require('log-timestamp')
 const config = require('./config')
 const auth = require('./lib/auth')
@@ -11,7 +9,7 @@ const chokidar = require('chokidar');
 const fs = require('fs').promises
 const parsers = require('./lib/parsers')
 const Queue = require('better-queue')
-
+const chalk = require('chalk')
 
 const cargoQueue = new Queue(cargo.cklsHandler, {
   id: 'file',
@@ -22,6 +20,12 @@ const cargoQueue = new Queue(cargo.cklsHandler, {
 cargoQueue.on('batch_failed', (taskId, err, stats) => {
   console.log( `[QUEUE] ${taskId} : Fail : ${err.message} : ${JSON.stringify(stats)}`)
 })
+
+const parseQueue = new Queue (parseFile, {
+  concurrent: 3
+})
+
+run()
 
 async function parseFile (file, cb) {
   const component = 'PARSE'
@@ -56,21 +60,17 @@ async function parseFile (file, cb) {
   }
 }
 
-const parseQueue = new Queue (parseFile, {
-  concurrent: 3
-})
-
 async function run() {
   try {
-    console.log(`[AUTH] Keycloak preflight to ${config.authority}`)
+    console.log(chalk.white(`[AUTH] Keycloak preflight to ${config.authority}`))
     const tokens = await auth.getTokens()
-    console.log(`[AUTH] Keycloak Preflight succeeded: Got token`)
-    console.log(`[API] STIG Manager API preflight to ${config.apiBase} for Collection ${config.collectionId}`)
+    console.log(chalk.green(`[AUTH] Keycloak Preflight succeeded: Got token`))
+    console.log(chalk.white(`[API] STIG Manager API preflight to ${config.apiBase} for Collection ${config.collectionId}`))
     const assets = await api.getCollectionAssets(config.collectionId)
-    console.log(`[API] Preflight succeeded: Got Assets in Collection ${config.collectionId}`)
-    console.log(`[API] STIG Manager API preflight for installed STIGs`)
+    console.log(chalk.green(`[API] Preflight succeeded: Got Assets in Collection ${config.collectionId}`))
+    console.log(chalk.white(`[API] STIG Manager API preflight for installed STIGs`))
     const stigs = await api.getInstalledStigs()
-    console.log(`[API] Preflight succeeded: Got installed STIGs`)
+    console.log(chalk.green(`[API] Preflight succeeded: Got installed STIGs`))
 
     const watcher = chokidar.watch(config.watchDir, {
       ignored: /(^|[\/\\])\../,
@@ -89,9 +89,7 @@ async function run() {
     console.log(`[WATCHER] Watching ${config.watchDir}`)
   }
   catch (error) {
-    console.log(`${error.component} ${error.message}`)
+    console.log(chalk.red.bold(`${error.component} ${error.message}`))
+    process.exit(1)
   }
 }
-
-run()
-
