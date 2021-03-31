@@ -1,7 +1,17 @@
-const dotenv = require('dotenv')
-const path = require('path')
-const env = path.join(__dirname, '.env')
-dotenv.config({ path: env });
+const yargs = require("yargs")
+const fs = require('fs')
+const options = yargs
+ .usage("Usage: -e <environment_file>")
+ .option("e", { alias: "env", describe: "Environment file", type: "string", demandOption: false })
+ .argv
+
+ if (options.env && !fs.existsSync(options.env)) {
+   console.error(`Environment file ${options.env} not found`)
+ }
+ else if (options.env) {
+  const dotenv = require('dotenv')
+  dotenv.config({ path: options.env }); 
+ }
 
 module.exports = {
   addExisting: process.env.WATCHER_ADD_EXISTING !== undefined ? process.env.WATCHER_ADD_EXISTING === 'true' : false,

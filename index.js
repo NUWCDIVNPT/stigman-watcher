@@ -1,12 +1,17 @@
+#!/usr/bin/env node
+
+
+
+require('log-timestamp')
+const config = require('./config')
 const auth = require('./lib/auth')
 const api = require('./lib/api')
 const cargo = require('./lib/cargo')
-const config = require('./config')
 const chokidar = require('chokidar');
 const fs = require('fs').promises
 const parsers = require('./lib/parsers')
 const Queue = require('better-queue')
-require('log-timestamp')
+
 
 const cargoQueue = new Queue(cargo.cklsHandler, {
   id: 'file',
@@ -57,19 +62,21 @@ const parseQueue = new Queue (parseFile, {
 
 async function run() {
   try {
-    console.log(`[AUTH] Trying preflight`)
+    console.log(`[AUTH] Keycloak preflight to ${config.authority}`)
     const tokens = await auth.getTokens()
-    console.log(`[AUTH] Preflight succeeded: Got OIDC token`)
-    console.log(`[API] Trying preflight`)
+    console.log(`[AUTH] Keycloak Preflight succeeded: Got token`)
+    console.log(`[API] STIG Manager API preflight to ${config.apiBase} for Collection ${config.collectionId}`)
     const assets = await api.getCollectionAssets(config.collectionId)
     console.log(`[API] Preflight succeeded: Got Assets in Collection ${config.collectionId}`)
+    console.log(`[API] STIG Manager API preflight for installed STIGs`)
     const stigs = await api.getInstalledStigs()
     console.log(`[API] Preflight succeeded: Got installed STIGs`)
 
     const watcher = chokidar.watch(config.watchDir, {
       ignored: /(^|[\/\\])\../,
       ignoreInitial: !config.addExisting,
-      persistent: true
+      persistent: true,
+      // usePolling: true
     })
 
     watcher.on('add', file  => {
