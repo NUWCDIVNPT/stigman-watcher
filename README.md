@@ -14,7 +14,7 @@ $ npm ci
 ```
 
 ## Configuration
-The Watcher is configured by setting environment variables
+The Watcher is configured by setting environment variables, with support for an `.env` file (sample provided).
 
 | Variable | Description |
 | --- | --- |

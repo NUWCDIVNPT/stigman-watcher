@@ -12,7 +12,7 @@ const cargoQueue = new Queue(cargo.cklsHandler, {
   id: 'file',
   batchSize: config.cargoSize,
   batchDelay: config.cargoDelay,
-  batchDelayTimeout: config.cargoDelay
+  // batchDelayTimeout: config.cargoDelay
 })
 cargoQueue.on('batch_failed', (taskId, err, stats) => {
   console.log( `[QUEUE] ${taskId} : Fail : ${err.message} : ${JSON.stringify(stats)}`)
@@ -43,7 +43,7 @@ async function parseFile (file, cb) {
     console.log(`[QUEUE] ${file}`)
   }
   catch (e) {
-    console.log(`[${component}] Error ${e}`)
+    console.log(`[${component}] ${file} ${e}`)
     cb( e, undefined)
   }
   finally {
@@ -57,8 +57,10 @@ const parseQueue = new Queue (parseFile, {
 
 async function run() {
   try {
+    console.log(`[AUTH] Trying preflight`)
     const tokens = await auth.getTokens()
     console.log(`[AUTH] Preflight succeeded: Got OIDC token`)
+    console.log(`[API] Trying preflight`)
     const assets = await api.getCollectionAssets(config.collectionId)
     console.log(`[API] Preflight succeeded: Got Assets in Collection ${config.collectionId}`)
     const stigs = await api.getInstalledStigs()
@@ -71,8 +73,11 @@ async function run() {
     })
 
     watcher.on('add', file  => {
-      console.log(`[ADDED] ${file}`)
-      parseQueue.push( file )
+      const extension = file.substring(file.lastIndexOf(".") + 1)
+      if (extension.toLowerCase() === 'ckl') {
+        console.log(`[ADDED] ${file}`)
+        parseQueue.push( file )
+      }
     })
     console.log(`[WATCHER] Watching ${config.watchDir}`)
   }

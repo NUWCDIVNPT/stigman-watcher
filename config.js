@@ -1,3 +1,8 @@
+const dotenv = require('dotenv')
+const path = require('path')
+const env = path.join(__dirname, '.env')
+dotenv.config({ path: env });
+
 module.exports = {
   addExisting: process.env.WATCHER_ADD_EXISTING !== undefined ? process.env.WATCHER_ADD_EXISTING === 'true' : false,
   collectionId: process.env.WATCHER_COLLECTION || '18',
