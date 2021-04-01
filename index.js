@@ -63,8 +63,8 @@ async function parseFile (file, cb) {
 async function run() {
   try {
     console.log(chalk.white(`[AUTH] Keycloak preflight to ${config.authority}`))
-    const tokens = await auth.getTokens()
-    console.log(chalk.green(`[AUTH] Keycloak Preflight succeeded: Got token`))
+    const token = await auth.getToken()
+    console.log(chalk.green(`[AUTH] Keycloak preflight succeeded: Got token ${JSON.stringify(token)}`))
     console.log(chalk.white(`[API] STIG Manager API preflight to ${config.apiBase} for Collection ${config.collectionId}`))
     const assets = await api.getCollectionAssets(config.collectionId)
     console.log(chalk.green(`[API] Preflight succeeded: Got Assets in Collection ${config.collectionId}`))
