@@ -73,10 +73,10 @@ async function run() {
     console.log(chalk.green(`[API] Preflight succeeded: Got installed STIGs`))
 
     const watcher = chokidar.watch(config.watchDir, {
-      ignored: /(^|[\/\\])\../,
+      ignored: config.ignoreDirs,
       ignoreInitial: !config.addExisting,
       persistent: true,
-      // usePolling: true
+      usePolling: config.usePolling
     })
 
     watcher.on('add', file  => {
