@@ -18,7 +18,7 @@
     "got": "^11.8.2",
     "he": "^1.2.0",
     "jsonwebtoken": "^8.5.1",
-    "log-timestamp": "^0.3.0",
+    "serialize-error": "^8.0.1",
     "yargs": "^16.2.0"
   }
 }

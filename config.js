@@ -1,5 +1,6 @@
 const yargs = require("yargs")
 const fs = require('fs')
+const log = require("./lib/logger")
 
 const options = yargs
  .usage("Usage: -e <environment_file>")
@@ -7,7 +8,11 @@ const options = yargs
  .argv
 
 if (options.env && !fs.existsSync(options.env)) {
-   console.error(`Environment file ${options.env} not found`)
+  log( 'error', {
+    component: 'watcher',
+    message: `Environment file not found`,
+    path: options.env
+  })
 }
 else if (!options.env && fs.existsSync('.env')) {
   options.env = '.env'
