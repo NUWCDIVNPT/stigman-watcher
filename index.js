@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 
-// require('log-timestamp')
 const config = require('./config')
-const log  = require('./lib/logger')
+const logger  = require('./lib/logger')
 const auth = require('./lib/auth')
 const api = require('./lib/api')
 const cargo = require('./lib/cargo')
@@ -19,7 +18,7 @@ const cargoQueue = new Queue(cargo.cklsHandler, {
   // batchDelayTimeout: config.cargoDelay
 })
 cargoQueue.on('batch_failed', (taskId, err, stats) => {
-  log( 'error', {
+  logger.error( {
     component: 'queue',
     message: err.message,
     taskId: taskId,
@@ -47,7 +46,7 @@ async function parseFile (file, cb) {
       type = "XCCDF"
     }
     else {
-      log( 'error', {
+      logger.error({
         component: component,
         message: `Ignored unknown extension`,
         file: file
@@ -55,14 +54,14 @@ async function parseFile (file, cb) {
       return false
     }
     const data = await fs.readFile(file)
-    log( 'info', {
+    logger.info({
       component: component,
       message: `Start parse`,
       file: file
     })
     let parseResult = parser(data)
     parseResult.file = file
-    log( 'info', {
+    logger.info({
       component: component,
       message: `Queue parsed results`,
       file: file
@@ -70,7 +69,7 @@ async function parseFile (file, cb) {
     cargoQueue.push( parseResult )
   }
   catch (e) {
-    log( 'error', {
+    logger.error({
       component: component,
       message: e.message,
       file: file
@@ -86,12 +85,12 @@ async function parseFile (file, cb) {
 async function run() {
   try {
     const token = await auth.getToken( true )
-    log('info', { component: 'api', message: `STIG Manager API preflight to ${config.apiBase} for Collection ${config.collectionId}`})
+    logger.info({ component: 'api', message: `STIG Manager API preflight to ${config.apiBase} for Collection ${config.collectionId}`})
     const assets = await api.getCollectionAssets(config.collectionId)
-    log( 'success', { component: 'api', message: `Preflight succeeded, got Assets in Collection ${config.collectionId}`})
-    log('info', { component: 'api', message: `STIG Manager API preflight for installed STIGs`})
+    logger.info({ component: 'api', message: `Preflight succeeded, got Assets in Collection ${config.collectionId}`})
+    logger.info({ component: 'api', message: `STIG Manager API preflight for installed STIGs`})
     const stigs = await api.getInstalledStigs()
-    log( 'success', { component: 'api', message: `Preflight succeeded, got installed STIGs`})
+    logger.info({ component: 'api', message: `Preflight succeeded, got installed STIGs`})
 
     const watcher = chokidar.watch(config.watchDir, {
       ignored: config.ignoreDirs,
@@ -101,7 +100,7 @@ async function run() {
     })
 
     watcher.on('error', e => {
-      log('watcher', {
+      logger.error({
         component: 'watcher',
         error: serializeError(e)
       })
@@ -111,7 +110,7 @@ async function run() {
       // chokidar glob argument doesn't work for UNC Windows, so we check file extension here
       const extension = file.substring(file.lastIndexOf(".") + 1)
       if (extension.toLowerCase() === 'ckl') {
-        log( 'info', {
+        logger.info({
           component: 'watcher',
           message: 'File system event',
           event:  'add',
@@ -120,7 +119,7 @@ async function run() {
         parseQueue.push( file )
       }
     })
-    log('info', { component: 'watcher', message: `Starting to watch ${config.watchDir}` })
+    logger.info({ component: 'watcher', message: `Starting to watch ${config.watchDir}` })
   }
   catch (e) {
     const errorObj = {
@@ -142,7 +141,7 @@ async function run() {
     if (e.name !== 'RequestError' && e.name !== 'HTTPError') {
       errorObj.error = serializeError(e)
     }
-    log('error', errorObj)
+    logger.error(errorObj)
     process.exit(1)
   }
 }
