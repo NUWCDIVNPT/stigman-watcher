@@ -21,63 +21,59 @@ $ npm install --global https://github.com/csmig/stigman-watcher#branch-name
 ## Usage
 
 ```
-Usage: stigman-watcher [options]
+stigman-watcher [options]
 ```
-Issuing the `--help` option produces a help screen showing available options and their current values based on the environment (see [Configuration](#configuration))
+Many options can be set with an environment variable (see [Configuration](#configuration)). 
 
 ## Options
+Issuing the option `--help` shows the available options, their corresponding environment variables, and their current values based on the environment.
 ```
-  --add-existing              Process existing files in the watched path. Negate
-                              with --no-add-existing. (currently: false)
+  --add-existing              Process existing files in the watched path. Negate with
+                              --no-add-existing. (currently: false)
   
-  --api <url>                 Base URL of the STIG Manager API (API_BASE)
-                              (REQUIRED)
+  --api <url>                 Base URL of the STIG Manager API (API_BASE) (REQUIRED)
   
   --authority <url>           Base URL of the OIDC authority (AUTHORITY) (REQUIRED)
   
   -c, --collection-id <id>    collectionId to manage (COLLECTION) (REQUIRED)
   
-  --cargo-delay <ms>          Milliseconds to delay processing the queue
-                              (CARGO_DELAY) (currently: 2000)
+  --cargo-delay <ms>          Milliseconds to delay processing the queue (CARGO_DELAY)
+                              (currently: 2000)
   
-  --cargo-size <number>       Maximum queue size that triggers processing
-                              (CARGO_SIZE) (currently: 25)
+  --cargo-size <number>       Maximum queue size that triggers processing (CARGO_SIZE)
+                              (currently: 25)
   
-  --client-id <string>        OIDC clientId to authenticate (CLIENT_ID). You will
-                              be prompted for the client secret if --client-key is
-                              not provided and --prompt is provided, unless
-                              WATCHER_CLIENT_SECRET is set (REQUIRED)
+  --client-id <string>        OIDC clientId to authenticate (CLIENT_ID). You will be prompted
+                              for the client secret if --client-key is not provided and --prompt
+                              is provided, unless WATCHER_CLIENT_SECRET is set (REQUIRED)
   
-  --client-key <path>         Path to a PEM encoded private key (CLIENT_KEY). If
-                              needed, you will be prompted for the passphrase if
-                              --prompt is provided, unless
-                              WATCHER_CLIENT_KEY_PASSPHRASE is set.
+  --client-key <path>         Path to a PEM encoded private key (CLIENT_KEY). If needed, you
+                              will be prompted for the passphrase if --prompt is provided,
+                              unless WATCHER_CLIENT_KEY_PASSPHRASE is set.
   
-  --create-objects            Create Assets or STIG Assignments as needed
-                              (CREATE_OBJECTS). Negate with --no-create-objects.
-                              (currently: true)
+  --create-objects            Create Assets or STIG Assignments as needed (CREATE_OBJECTS).
+                              Negate with --no-create-objects. (currently: true)
   
-  -d, --debug                 Shortcut for --log-level debug --log-file-level debug
-                              (currently: false)
+  -d, --debug                 Shortcut for --log-level debug --log-file-level debug (currently:
+                              false)
   
   -h, --help                  display help for command
   
   --ignore-dir [names...]     Sub-directory name to ignore. Can be invoked multiple
                               times.(IGNORE_DIRS=<csv>)
   
-  --log-color                 Colorize the console log output. Confuses some piped
-                              processes. (currently: false)
+  --log-color                 Colorize the console log output. Confuses some piped processes.
+                              (currently: false)
   
-  --log-file <path>           Path to the log file (LOG_FILE). Disable file logging
-                              with --no-log-file (currently: false)
+  --log-file <path>           Path to the log file (LOG_FILE). Disable file logging with
+                              --no-log-file (currently: false)
   
-  --log-file-level <level>    Log level for the log file (LOG_FILE_LEVEL) (choices:
-                              "error", "warn", "info", "http", "verbose", "debug",
-                              "silly", currently: "verbose")
+  --log-file-level <level>    Log level for the log file (LOG_FILE_LEVEL) (choices: "error",
+                              "warn", "info", "http", "verbose", "debug", "silly", currently:
+                              "verbose")
   
-  --log-level <level>         Log level for the console (LOG_LEVEL) (choices:
-                              "error", "warn", "info", "http", "verbose", "debug",
-                              "silly", currently: "info")
+  --log-level <level>         Log level for the console (LOG_LEVEL) (choices: "error", "warn",
+                              "info", "http", "verbose", "debug", "silly", currently: "info")
   
   --no-add-existing           Ignore existing files in the watched path.
   
@@ -87,23 +83,23 @@ Issuing the `--help` option produces a help screen showing available options and
   
   --no-use-polling            Use file system events without polling.
   
-  --one-shot                  Process existing files in the watched path and exit.
-                              Sets --add-existing. (currently: false)
+  --one-shot                  Process existing files in the watched path and exit. Sets
+                              --add-existing. (currently: false)
   
   -p, --path <path>           Path to watch (PATH) (currently: ".")
   
-  --prompt                    Prompt for missing secret or passphrase (currently:
-                              false)
+  --prompt                    Prompt for missing secret or passphrase (currently: false)
   
   -s, --silent                Disable logging to the console (currently: false)
   
-  --stability-threshold <ms>  Milliseconds to wait for file size to stabilize.
-                              (currently: 0)
+  --stability-threshold <ms>  Milliseconds to wait for file size to stabilize. May be helpful
+                              when watching network shares. (currently: 0)
   
-  --use-polling               Use file system events with polling. Negate with
-                              --no-use-polling (currently: true)
+  --use-polling               Use file system events with polling. Negate with --no-use-polling
+                              (currently: true)
   
   --version                   Print the current version and exit
+
 
 ```
 ### Example
@@ -118,7 +114,7 @@ $ stigman-watcher \
 To stop execution, type `Ctrl-C`.
 ## Configuration
 
-Many options can be set with an environment variable prefixed by "WATCHER_". The environment can also be set from an .env file in the current directory
+Many options can be set with an environment variable prefixed by "WATCHER_". The environment can also be set from an `.env` file in the current directory
 
 | Variable | Description |
 | --- | --- |
