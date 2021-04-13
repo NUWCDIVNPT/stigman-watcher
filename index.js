@@ -23,12 +23,10 @@ else {
     // batchDelayTimeout: config.cargoDelay
   })
   cargoQueue
-  .on('batch_failed', (taskId, err, stats) => {
+  .on('batch_failed', (err) => {
     logger.error( {
-      component: 'queue',
-      message: err.message,
-      taskId: taskId,
-      stats: stats
+      component: 'batch',
+      message: err?.message,
     })
   })
   .on('batch_finish', (a, b, c) => {
@@ -72,14 +70,14 @@ else {
         return false
       }
       const data = await fs.readFile(file)
-      logger.info({
+      logger.debug({
         component: component,
         message: `Start parse`,
         file: file
       })
       let parseResult = parser(data)
       parseResult.file = file
-      logger.info({
+      logger.debug({
         component: component,
         message: `Queue parsed results`,
         file: file
@@ -105,7 +103,7 @@ else {
       logger.info({
         component: 'watcher',
         message: 'starting',
-        config: securedConfig(config)
+        config: secureConfig(config)
       })
       const token = await auth.getToken()
       logger.info({ component: 'watcher', message: `preflight token request suceeded`})
@@ -148,7 +146,7 @@ else {
           parseQueue.push( file )
         }
       })
-      logger.info({ component: 'watcher', message: `Starting to watch ${resolve(config.path)}` })
+      logger.info({ component: 'watcher', message: `watching`, path: resolve(config.path) })
     }
     catch (e) {
       const errorObj = {
@@ -175,7 +173,7 @@ else {
     }
   }
 
-  function securedConfig(config) {
+  function secureConfig(config) {
     const securedConfig = {...config}
     if (securedConfig.clientSecret) {
       securedConfig.clientSecret = '[hidden]'
