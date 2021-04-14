@@ -31,7 +31,6 @@ stigman-watcher [options]
 Many options can be set with an environment variable (see [Configuration](#configuration)). 
 
 ## Options
-Providing the option `--help` shows the available options, their corresponding environment variables, and their current values based on the environment.
 
 ---
 **--add-existing**
@@ -88,7 +87,7 @@ Shortcut for `--log-level debug --log-file-level debug`
 ---
 **-h, --help**
 
-Display help for command
+Shows the available options, their corresponding environment variables, and their current values based on the environment.
   
 ---
 **--ignore-dir [names...]**
