@@ -1,6 +1,6 @@
 {
   "name": "stigman-watcher-test",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "CLI that watches a path for STIG test result files on behalf of a STIG Manager Collection.",
   "main": "index.js",
   "bin": {
