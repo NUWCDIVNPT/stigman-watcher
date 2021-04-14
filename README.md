@@ -58,7 +58,7 @@ Maximum queue size that triggers processing (`WATCHER_CARGO_SIZE`) (default: 25)
 ---
 **--client-id *string***
 
-*Required.* OIDC clientId to authenticate (WATCHER_CLIENT_ID). You will be prompted for the client secret if `--client-key` is not provided and `--prompt` is provided, unless WATCHER_CLIENT_SECRET is set.
+*Required.* OIDC clientId to authenticate (WATCHER_CLIENT_ID). You will be prompted for the client secret if `--client-key` is not provided and `--prompt` is provided, unless `WATCHER_CLIENT_SECRET` is set.
   
 ---
 **--client-key *path***
@@ -83,7 +83,7 @@ Shortcut for `--log-level debug --log-file-level debug`
 Shows the available options, their corresponding environment variables, and their current values based on the environment.
   
 ---
-**--ignore-dir [names...]**
+**--ignore-dir *[names...]***
 
 Sub-directory name to ignore. Can be invoked multiple times.(`WATCHER_IGNORE_DIRS=<csv>`)
   
