@@ -13,14 +13,8 @@ A utility that watches a path for STIG test result files on behalf of a [STIG Ma
 
 ## Installation
 
-To install from the `main` branch
 ```
-$ npm install --global https://github.com/nuwcdivnpt/stigman-watcher
-```
-
-To install from other branches
-```
-$ npm install --global https://github.com/nuwcdivnpt/stigman-watcher#branch-name
+$ npm install --global stigman-watcher
 ```
 
 ## Usage
