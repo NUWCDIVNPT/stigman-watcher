@@ -26,7 +26,6 @@ Many options can be set with an environment variable (see [Configuration](#confi
 
 ## Options
 
----
 **--add-existing**
 
 Process existing files in the watched path (`WATCHER_ADD_EXISTING=1`). Negate with `--no-add-existing`.
