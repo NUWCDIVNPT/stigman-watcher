@@ -4,10 +4,14 @@
   "description": "",
   "main": "index.js",
   "bin": {
-    "stigman-watcher": "index.js"
+    "stigman-watcher": "./index.js"
   },
   "author": "carl.a.smigielski@saic.com",
   "license": "MIT",
+  "repository": "github:nuwcdivnpt/stigman-watcher",
+  "engines": {
+    "node": ">=14"
+  },
   "dependencies": {
     "atob": "^2.1.2",
     "better-queue": "^3.8.10",
