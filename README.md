@@ -3,6 +3,8 @@
 </p>
 <h1 align="center"> STIG Manager Watcher </h1>
 
+<a href="https://npmjs.org/package/stigman-watcher"><img src="https://img.shields.io/badge/npm-1.0.0-green"></a>
+
 A utility that watches a path for STIG test result files on behalf of a [STIG Manager](https://github.com/nuwcdivnpt/stig-manager) Collection. Each CKL or XCCDF file added to the path or any sub-paths is parsed and placed onto a timed cargo queue. If configured to do so, the utilty will create new Assets as needed and update STIG assignments. Reviews from the result files are POSTed to the corresponding Asset.
 
 ## Requirements
