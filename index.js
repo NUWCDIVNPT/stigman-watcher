@@ -102,7 +102,7 @@ else {
     try {
       logger.info({
         component: 'watcher',
-        message: 'starting',
+        message: 'configured',
         config: secureConfig(config)
       })
       const token = await auth.getToken()
