@@ -34,7 +34,7 @@ Process existing files in the watched path (`WATCHER_ADD_EXISTING=1`). Negate wi
 ---  
 **--api *url*** 
 
-*Required.* Base URL of the STIG Manager API (`WATCHER_API_BASE`) *required*
+*Required.* Base URL of the STIG Manager API (`WATCHER_API_BASE`)
 
 ---  
 **--authority *url***
@@ -44,7 +44,7 @@ Process existing files in the watched path (`WATCHER_ADD_EXISTING=1`). Negate wi
 ---
 **-c, --collection-id *id***
 
-*Required.* collectionId to manage (`WATCHER_COLLECTION`)
+*Required.* STIG Manager collectionId to manage (`WATCHER_COLLECTION`)
   
 ---
 **--cargo-delay *ms***
@@ -71,7 +71,7 @@ provided, unless `WATCHER_CLIENT_KEY_PASSPHRASE` is set.
 ---
 **--create-objects**
 
-Create Assets or STIG Assignments as needed (`WATCHER_CREATE_OBJECTS=1`). Negate with `--no-create-objects`. (default: true)
+Create STIG Manager Assets and/or STIG Assignments as needed (`WATCHER_CREATE_OBJECTS=1`). Negate with `--no-create-objects`. (default: true)
   
 ---
 **-d, --debug**
@@ -86,7 +86,7 @@ Shows the available options, their corresponding environment variables, and thei
 ---
 **--ignore-dir *name***
 
-Sub-directory name to ignore. Can be invoked multiple times.(`WATCHER_IGNORE_DIRS=<csv>`)
+Sub-directory name to ignore. Can be invoked multiple times. (`WATCHER_IGNORE_DIRS=<csv>`)
   
 ---
 **--log-color**
@@ -96,7 +96,7 @@ Colorize the console log output. Might confound downstream piped processes.
 ---
 **--log-file *path***
 
-Path to the log file (`WATCHER_LOG_FILE`). Will be created if needed. Disable file logging with `--no-log-file`.
+Path to a log file which will be created if needed (`WATCHER_LOG_FILE`). Disable file logging with `--no-log-file`.
   
 ---
 **--log-file-level *level***
@@ -122,7 +122,7 @@ Do not create Assets or STIG Assignments (`WATCHER_CREATE_OBJECTS=0`).
 ---
 **--no-log-file**
 
-Disable logging to a logfile
+Disable logging to a logfile.
   
 ---
 **--no-use-polling**
@@ -157,7 +157,7 @@ Milliseconds to wait for file size to stabilize. May be helpful when watching ne
 ---
 **--use-polling**
 
-Use file system events with polling (`WATCHER_USE_POLLING`). Negate with --no-use-polling (default: true)
+Use file system events with polling (`WATCHER_USE_POLLING`). Negate with `--no-use-polling` (default: true)
   
 ---
 **--version**
