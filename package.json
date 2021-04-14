@@ -1,7 +1,7 @@
 {
-  "name": "stigman-watcher",
+  "name": "stigman-watcher-test",
   "version": "1.0.0",
-  "description": "",
+  "description": "CLI that watches a path for STIG test result files on behalf of a STIG Manager Collection.",
   "main": "index.js",
   "bin": {
     "stigman-watcher": "./index.js"
