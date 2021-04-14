@@ -1,95 +1,183 @@
 #!/usr/bin/env node
 
-require('log-timestamp')
-const config = require('./config')
-const auth = require('./lib/auth')
-const api = require('./lib/api')
-const cargo = require('./lib/cargo')
-const chokidar = require('chokidar');
-const fs = require('fs').promises
-const parsers = require('./lib/parsers')
-const Queue = require('better-queue')
-const chalk = require('chalk')
-
-const cargoQueue = new Queue(cargo.cklsHandler, {
-  id: 'file',
-  batchSize: config.cargoSize,
-  batchDelay: config.cargoDelay,
-  // batchDelayTimeout: config.cargoDelay
-})
-cargoQueue.on('batch_failed', (taskId, err, stats) => {
-  console.log( `[QUEUE] ${taskId} : Fail : ${err.message} : ${JSON.stringify(stats)}`)
-})
-
-const parseQueue = new Queue (parseFile, {
-  concurrent: 3
-})
-
-run()
-
-async function parseFile (file, cb) {
-  const component = 'PARSE'
-  try {
-    console.log(`[${component}] ${file}`)
-    const extension = file.substring(file.lastIndexOf(".") + 1)
-    let parser, type
-    if (extension.toLowerCase() === 'ckl') {
-      parser = parsers.reviewsFromCkl
-      type = 'CKL'
-    }
-    else if (extension.toLowerCase() === 'xml') {
-      parser = parsers.reviewsFromScc
-      type = "XCCDF"
-    }
-    else {
-      console.log(`[${component}] ${file}: ignored unknown extension.`)
-      return false
-    }
-    const data = await fs.readFile(file)
-    let parseResult = parser(data)
-    parseResult.file = file
-    cargoQueue.push( parseResult )
-    console.log(`[QUEUE] ${file}`)
-  }
-  catch (e) {
-    console.log(`[${component}] ${file} ${e}`)
-    cb( e, undefined)
-  }
-  finally {
-    cb()
-  }
+const {logger} = require('./lib/logger')
+const config = require('./lib/args')
+if (!config) {
+  logger.end()
 }
+else {
+  const auth = require('./lib/auth')
+  const api = require('./lib/api')
+  const cargo = require('./lib/cargo')
+  const chokidar = require('chokidar');
+  const fs = require('fs').promises
+  const parsers = require('./lib/parsers')
+  const Queue = require('better-queue')
+  const {serializeError} = require('serialize-error')
+  const {resolve} = require('path')
 
-async function run() {
-  try {
-    console.log(chalk.white(`[AUTH] Keycloak preflight to ${config.authority}`))
-    const token = await auth.getToken()
-    console.log(chalk.green(`[AUTH] Keycloak preflight succeeded: Got token ${JSON.stringify(token)}`))
-    console.log(chalk.white(`[API] STIG Manager API preflight to ${config.apiBase} for Collection ${config.collectionId}`))
-    const assets = await api.getCollectionAssets(config.collectionId)
-    console.log(chalk.green(`[API] Preflight succeeded: Got Assets in Collection ${config.collectionId}`))
-    console.log(chalk.white(`[API] STIG Manager API preflight for installed STIGs`))
-    const stigs = await api.getInstalledStigs()
-    console.log(chalk.green(`[API] Preflight succeeded: Got installed STIGs`))
-
-    const watcher = chokidar.watch(config.watchDir, {
-      ignored: config.ignoreDirs,
-      ignoreInitial: !config.addExisting,
-      persistent: true,
-      usePolling: config.usePolling
+  const cargoQueue = new Queue(cargo.cklsHandler, {
+    id: 'file',
+    batchSize: config.cargoSize,
+    batchDelay: config.oneShot ? 0 : config.cargoDelay,
+    // batchDelayTimeout: config.cargoDelay
+  })
+  cargoQueue
+  .on('batch_failed', (err) => {
+    logger.error( {
+      component: 'batch',
+      message: err?.message,
     })
+  })
+  .on('batch_finish', (a, b, c) => {
+    // console.log(`waiting ${cargoQueue._store._queue.length}`)
+  })
+  .on('drain', () => {
+    if (config.oneShot) {
+      logger.info({
+        component: 'watcher',
+        message: 'finished one shot mode'
+      })
+      process.exit()
+    }
+  })
 
-    watcher.on('add', file  => {
+  const parseQueue = new Queue (parseFile, {
+    concurrent: 3
+  })
+
+  run()
+
+  async function parseFile (file, cb) {
+    const component = 'parser'
+    try {
       const extension = file.substring(file.lastIndexOf(".") + 1)
+      let parser, type
       if (extension.toLowerCase() === 'ckl') {
-        console.log(`[ADDED] ${file}`)
-        parseQueue.push( file )
+        parser = parsers.reviewsFromCkl
+        type = 'CKL'
       }
-    })
-    console.log(`[WATCHER] Watching ${config.watchDir}`)
+      else if (extension.toLowerCase() === 'xml') {
+        parser = parsers.reviewsFromScc
+        type = "XCCDF"
+      }
+      else {
+        logger.warn({
+          component: component,
+          message: `Ignored unknown extension`,
+          file: file
+        })
+        return false
+      }
+      const data = await fs.readFile(file)
+      logger.debug({
+        component: component,
+        message: `Start parse`,
+        file: file
+      })
+      let parseResult = parser(data)
+      parseResult.file = file
+      logger.debug({
+        component: component,
+        message: `Queue parsed results`,
+        file: file
+      })
+      cargoQueue.push( parseResult )
+    }
+    catch (e) {
+      logger.warn({
+        component: component,
+        message: e.message,
+        file: file
+      })
+      cb( e, undefined)
+    }
+    finally {
+      cb()
+    }
   }
-  catch (error) {
-    console.log(chalk.red.bold(`${error.component} ${error.message}`))
-    process.exit(1)
+
+
+  async function run() {
+    try {
+      logger.info({
+        component: 'watcher',
+        message: 'starting',
+        config: secureConfig(config)
+      })
+      const token = await auth.getToken()
+      logger.info({ component: 'watcher', message: `preflight token request suceeded`})
+      const assets = await api.getCollectionAssets(config.collectionId)
+      const stigs = await api.getInstalledStigs()
+      logger.info({ component: 'watcher', message: `prefilght api requests suceeded`})
+
+      const awaitWriteFinishVal = config.stabilityThreshold ? { stabilityThreshold: config.stabilityThreshold } : false
+      const watcher = chokidar.watch(config.path, {
+        ignored: config.ignoreDirs,
+        ignoreInitial: !config.addExisting,
+        persistent: true,
+        usePolling: config.usePolling,
+        awaitWriteFinish: awaitWriteFinishVal
+      })
+
+      watcher.on('ready', e => {
+       if (config.oneShot) {
+         watcher.close()
+       }
+      })
+
+      watcher.on('error', e => {
+        logger.error({
+          component: 'watcher',
+          error: serializeError(e)
+        })
+      })
+
+      watcher.on('add', file  => {
+        // chokidar glob argument doesn't work for UNC Windows, so we check file extension here
+        const extension = file.substring(file.lastIndexOf(".") + 1)
+        if (extension.toLowerCase() === 'ckl' || extension.toLowerCase() === 'xml') {
+          logger.info({
+            component: 'watcher',
+            message: 'File system event',
+            event:  'add',
+            file: file
+          })
+          parseQueue.push( file )
+        }
+      })
+      logger.info({ component: 'watcher', message: `watching`, path: resolve(config.path) })
+    }
+    catch (e) {
+      const errorObj = {
+        component: e.component || 'watcher',
+        message: e.message,
+      }
+      if (e.request) {
+        errorObj.request = {
+          method: e.request.options?.method,
+          url: e.request.requestUrl
+        }
+      }
+      if (e.response) {
+        errorObj.response = {
+          status: e.response.statusCode,
+          body: e.response.body
+        }
+      }
+      if (e.name !== 'RequestError' && e.name !== 'HTTPError') {
+        errorObj.error = serializeError(e)
+      }
+      logger.error(errorObj)
+      logger.end()
+    }
+  }
+
+  function secureConfig(config) {
+    const securedConfig = {...config}
+    if (securedConfig.clientSecret) {
+      securedConfig.clientSecret = '[hidden]'
+    }
+    return securedConfig
   }
 }

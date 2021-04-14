@@ -6,19 +6,20 @@
   "bin": {
     "stigman-watcher": "index.js"
   },
-  "author": "",
+  "author": "carl.a.smigielski@saic.com",
   "license": "MIT",
   "dependencies": {
     "atob": "^2.1.2",
     "better-queue": "^3.8.10",
-    "chalk": "^4.1.0",
     "chokidar": "^3.5.1",
+    "commander": "^7.2.0",
     "dotenv": "^8.2.0",
     "fast-xml-parser": "^3.19.0",
     "got": "^11.8.2",
     "he": "^1.2.0",
     "jsonwebtoken": "^8.5.1",
-    "log-timestamp": "^0.3.0",
-    "yargs": "^16.2.0"
+    "prompt-sync": "^4.2.0",
+    "serialize-error": "^8.0.1",
+    "winston": "^3.3.3"
   }
 }

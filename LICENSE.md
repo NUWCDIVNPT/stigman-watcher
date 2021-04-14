@@ -1,6 +1,6 @@
 ## MIT License
 
-Copyright (c) 2021 Carl Smigielski
+Copyright (c) 2021 Carl Smigielski (carl.a.smigielski@saic.com)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
