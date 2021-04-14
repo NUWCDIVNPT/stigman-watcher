@@ -1,21 +1,25 @@
-# STIG Manager Watcher
-A utility that watches a path for STIG test result files on behalf of a STIG Manager Collection. Each CKL or XCCDF file added to the directory is parsed and placed onto a timed cargo queue. If configured to do so, the utilty will create new Assets as needed and update STIG assignments. Reviews from the result files are POSTed to the corresponding Asset.
+<p align="center">
+  <img width="125" src="icon.svg">
+</p>
+<h1 align="center"> STIG Manager Watcher </h1>
+
+A utility that watches a path for STIG test result files on behalf of a [STIG Manager](https://github.com/nuwcdivnpt/stig-manager) Collection. Each CKL or XCCDF file added to the path or any sub-paths is parsed and placed onto a timed cargo queue. If configured to do so, the utilty will create new Assets as needed and update STIG assignments. Reviews from the result files are POSTed to the corresponding Asset.
 
 ## Requirements
 - Node.js 14+ and npm
 - Keycloak 11+ OIDC client configured with a service account and appropriate scopes
-- STIG Manager API with a Collection grant of "Manage" for the OIDC client
+- [STIG Manager API](https://github.com/nuwcdivnpt/stig-manager) with a Collection grant of "Manage" for the OIDC client
 
 ## Installation
 
 To install from the `main` branch
 ```
-$ npm install --global https://github.com/csmig/stigman-watcher
+$ npm install --global https://github.com/nuwcdivnpt/stigman-watcher
 ```
 
 To install from other branches
 ```
-$ npm install --global https://github.com/csmig/stigman-watcher#branch-name
+$ npm install --global https://github.com/nuwcdivnpt/stigman-watcher#branch-name
 ```
 
 ## Usage
@@ -26,33 +30,34 @@ stigman-watcher [options]
 Many options can be set with an environment variable (see [Configuration](#configuration)). 
 
 ## Options
-Issuing the option `--help` shows the available options, their corresponding environment variables, and their current values based on the environment.
+Providing the option `--help` shows the available options, their corresponding environment variables, and their current values based on the environment.
 ```
-  --add-existing              Process existing files in the watched path. Negate with
-                              --no-add-existing. (currently: false)
+  --add-existing              Process existing files in the watched path (WATCHER_ADD_EXISTING=1).
+                              Negate with --no-add-existing. (currently: false)
   
-  --api <url>                 Base URL of the STIG Manager API (API_BASE) (REQUIRED)
+  --api <url>                 Base URL of the STIG Manager API (WATCHER_API_BASE) (REQUIRED)
   
-  --authority <url>           Base URL of the OIDC authority (AUTHORITY) (REQUIRED)
+  --authority <url>           Base URL of the OIDC authority (WATCHER_AUTHORITY) (REQUIRED)
   
-  -c, --collection-id <id>    collectionId to manage (COLLECTION) (REQUIRED)
+  -c, --collection-id <id>    collectionId to manage (WATCHER_COLLECTION) (REQUIRED)
   
-  --cargo-delay <ms>          Milliseconds to delay processing the queue (CARGO_DELAY)
+  --cargo-delay <ms>          Milliseconds to delay processing the queue (WATCHER_CARGO_DELAY)
                               (currently: 2000)
   
-  --cargo-size <number>       Maximum queue size that triggers processing (CARGO_SIZE)
+  --cargo-size <number>       Maximum queue size that triggers processing (WATCHER_CARGO_SIZE)
                               (currently: 25)
   
-  --client-id <string>        OIDC clientId to authenticate (CLIENT_ID). You will be prompted
-                              for the client secret if --client-key is not provided and --prompt
-                              is provided, unless WATCHER_CLIENT_SECRET is set (REQUIRED)
+  --client-id <string>        OIDC clientId to authenticate (WATCHER_CLIENT_ID). You will be
+                              prompted for the client secret if --client-key is not provided and
+                              --prompt is provided, unless WATCHER_CLIENT_SECRET is set (REQUIRED)
   
-  --client-key <path>         Path to a PEM encoded private key (CLIENT_KEY). If needed, you
-                              will be prompted for the passphrase if --prompt is provided,
-                              unless WATCHER_CLIENT_KEY_PASSPHRASE is set.
+  --client-key <path>         Path to a PEM encoded private key (WATCHER_CLIENT_KEY). If the key
+                              is encrypted, you will be prompted for the passphrase if --prompt is
+                              provided, unless WATCHER_CLIENT_KEY_PASSPHRASE is set.
   
-  --create-objects            Create Assets or STIG Assignments as needed (CREATE_OBJECTS).
-                              Negate with --no-create-objects. (currently: true)
+  --create-objects            Create Assets or STIG Assignments as needed
+                              (WATCHER_CREATE_OBJECTS=1). Negate with --no-create-objects.
+                              (currently: true)
   
   -d, --debug                 Shortcut for --log-level debug --log-file-level debug (currently:
                               false)
@@ -60,47 +65,47 @@ Issuing the option `--help` shows the available options, their corresponding env
   -h, --help                  display help for command
   
   --ignore-dir [names...]     Sub-directory name to ignore. Can be invoked multiple
-                              times.(IGNORE_DIRS=<csv>)
+                              times.(WATCHER_IGNORE_DIRS=<csv>)
   
-  --log-color                 Colorize the console log output. Confuses some piped processes.
-                              (currently: false)
+  --log-color                 Colorize the console log output. Might confound downstream piped
+                              processes. (currently: false)
   
-  --log-file <path>           Path to the log file (LOG_FILE). Disable file logging with
-                              --no-log-file (currently: false)
+  --log-file <path>           Path to the log file (WATCHER_LOG_FILE). Will be created if needed.
+                              Disable file logging with --no-log-file (currently: false)
   
-  --log-file-level <level>    Log level for the log file (LOG_FILE_LEVEL) (choices: "error",
+  --log-file-level <level>    Log level for the log file (WATCHER_LOG_FILE_LEVEL) (choices:
+                              "error", "warn", "info", "http", "verbose", "debug", "silly",
+                              currently: "verbose")
+  
+  --log-level <level>         Log level for the console (WATCHER_LOG_LEVEL) (choices: "error",
                               "warn", "info", "http", "verbose", "debug", "silly", currently:
-                              "verbose")
+                              "info")
   
-  --log-level <level>         Log level for the console (LOG_LEVEL) (choices: "error", "warn",
-                              "info", "http", "verbose", "debug", "silly", currently: "info")
+  --no-add-existing           Ignore existing files in the watched path (WATCHER_ADD_EXISTING=0).
   
-  --no-add-existing           Ignore existing files in the watched path.
-  
-  --no-create-objects         Do not create Assets or STIG Assignments.
+  --no-create-objects         Do not create Assets or STIG Assignments (WATCHER_CREATE_OBJECTS=0).
   
   --no-log-file               Disable logging to a logfile
   
-  --no-use-polling            Use file system events without polling.
+  --no-use-polling            Use file system events without polling (WATCHER_USE_POLLING=0).
   
   --one-shot                  Process existing files in the watched path and exit. Sets
                               --add-existing. (currently: false)
   
-  -p, --path <path>           Path to watch (PATH) (currently: ".")
+  -p, --path <path>           Path to watch (WATCHER_PATH) (currently: ".")
   
   --prompt                    Prompt for missing secret or passphrase (currently: false)
   
   -s, --silent                Disable logging to the console (currently: false)
   
-  --stability-threshold <ms>  Milliseconds to wait for file size to stabilize. May be helpful
-                              when watching network shares. (currently: 0)
+  --stability-threshold <ms>  Milliseconds to wait for file size to stabilize. May be helpful when
+                              watching network shares. (WATCHER_STABILITY_THRESHOLD) (currently:
+                              0)
   
-  --use-polling               Use file system events with polling. Negate with --no-use-polling
-                              (currently: true)
+  --use-polling               Use file system events with polling (WATCHER_USE_POLLING). Negate
+                              with --no-use-polling (currently: true)
   
   --version                   Print the current version and exit
-
-
 ```
 ### Example
 ```
@@ -111,7 +116,7 @@ $ stigman-watcher \
   --authority https://keycloak-host/auth/realms/stigman \
   --api https://stigman-api/api
 ```
-To stop execution, type `Ctrl-C`.
+Unless `--one-shot` is provided, the utility remains active and processes every CKL or XCCDF file added under the given path. To stop execution send the process the `SIGINT` signal. If running from a shell, you can type `Ctrl-C` to exit.
 ## Configuration
 
 Many options can be set with an environment variable prefixed by "WATCHER_". The environment can also be set from an `.env` file in the current directory
@@ -130,6 +135,9 @@ Many options can be set with an environment variable prefixed by "WATCHER_". The
 |WATCHER_COLLECTION|No default<br>The collectionId on whose behalf the utility watches.
 |WATCHER_CREATE_OBJECTS|Default: "true"<br>Whether to permit the utility to create Assets and modify STIG assignments.|
 |WATCHER_IGNORE_DIRS|No default<br>Comma separated list of directory names to ignore.|
+|WATCHER_LOG_FILE|No default<br>Path to the log file. Will be created if necessary.|
+|WATCHER_LOG_FILE_LEVEL|Default: "verbose"<br>Log level for the log file. Must be one of "error", "warn", "info", "http", "verbose", "debug", "silly"|
+|WATCHER_LOG_LEVEL|Default: "info"<br>Log level for the console. Must be one of "error", "warn", "info", "http", "verbose", "debug", "silly"|
 |WATCHER_PATH|Default "."<br>The path to watch, either a full path or relative to the current directory. Windows and UNC paths should replace \ with /. For example, //SERVER/SHARE/DIRECTORY or C:/DIRECTORY|
 |WATCHER_STABILITY_THRESHOLD|Default 0<br>Milliseconds to wait for file size to stabilize. A high value may be helpful when watching network shares but will lower responsiveness.|
 |WATCHER_USE_POLLING|Default "true"<br>Use file system events and polling. Set this to true to successfully watch files over a network.| 
