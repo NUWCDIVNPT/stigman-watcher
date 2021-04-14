@@ -7,8 +7,9 @@ A utility that watches a path for STIG test result files on behalf of a [STIG Ma
 
 ## Requirements
 - Node.js 14+ and npm
-- Keycloak 11+ OIDC client configured with a service account and appropriate scopes
 - [STIG Manager API](https://github.com/nuwcdivnpt/stig-manager) with a Collection grant of "Manage" for the OIDC client
+- Keycloak 11+ configured to provide tokens to the STIG Manager API.
+- A Keycloak client configured with a service account and scopes `stig-manager:collection` and `stig-manager:stig:read`
 
 ## Installation
 
