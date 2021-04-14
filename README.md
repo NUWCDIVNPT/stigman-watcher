@@ -22,9 +22,10 @@ $ npm install --global stigman-watcher
 ```
 stigman-watcher [options]
 ```
-Many options can be set with an environment variable (see [Configuration](#configuration)). 
 
 ## Options
+
+Many options can be set with an environment variable prefixed by `WATCHER_`. The environment can be set from an `.env` file in the current directory.
 
 **--add-existing**
 
@@ -163,8 +164,6 @@ Use file system events with polling (`WATCHER_USE_POLLING`). Negate with --no-us
 
 Print the current version and exit
 
----
-
 ### Example
 ```
 $ stigman-watcher \
@@ -175,30 +174,6 @@ $ stigman-watcher \
   --api https://stigman-api/api
 ```
 Unless `--one-shot` is provided, the utility remains active and processes every CKL or XCCDF file added under the given path. To stop execution send the process the `SIGINT` signal. If running from a shell, you can type `Ctrl-C` to exit.
-## Configuration
-
-Many options can be set with an environment variable prefixed by "WATCHER_". The environment can also be set from an `.env` file in the current directory
-
-| Variable | Description |
-| --- | --- |
-|WATCHER_ADD_EXISTING|Default: "false"<br>Whether the utility should consider existing files in the directory as newly added.|
-|WATCHER_API_BASE|No default<br>The base URL of the STIG Manager API instance.|
-|WATCHER_AUTHORITY|No default<br>The base URL of the OIDC authority providing signed JWTs for the API. The utility will append `/protocol/openid-connect/token` to this URL. |
-|WATCHER_CARGO_DELAY|Default: 2000<br>Number of milliseconds to delay following the first push before processing the timed cargo queue. |
-|WATCHER_CARGO_SIZE|Default: 25<br>The number of parsed files (at most) that will occupy the timed cargo queue.| 
-|WATCHER_CLIENT_ID|No default<br>The clientId of the OIDC Client for the utility. |
-|WATCHER_CLIENT_KEY|No default<br>The PEM encoded private key file used to sign the OIDC client assertion (Signed JWT). Takes precedence over WATCHER_CLIENT_SECRET. |
-|WATCHER_CLIENT_KEY_PASSPHRASE|No default<br>The passphrase, if any, that protects the WATCHER_CLIENT_KEY. |
-|WATCHER_CLIENT_SECRET|No default<br>The client secret for the OIDC client.|
-|WATCHER_COLLECTION|No default<br>The collectionId on whose behalf the utility watches.
-|WATCHER_CREATE_OBJECTS|Default: "true"<br>Whether to permit the utility to create Assets and modify STIG assignments.|
-|WATCHER_IGNORE_DIRS|No default<br>Comma separated list of directory names to ignore.|
-|WATCHER_LOG_FILE|No default<br>Path to the log file. Will be created if necessary.|
-|WATCHER_LOG_FILE_LEVEL|Default: "verbose"<br>Log level for the log file. Must be one of "error", "warn", "info", "http", "verbose", "debug", "silly"|
-|WATCHER_LOG_LEVEL|Default: "info"<br>Log level for the console. Must be one of "error", "warn", "info", "http", "verbose", "debug", "silly"|
-|WATCHER_PATH|Default "."<br>The path to watch, either a full path or relative to the current directory. Windows and UNC paths should replace \ with /. For example, //SERVER/SHARE/DIRECTORY or C:/DIRECTORY|
-|WATCHER_STABILITY_THRESHOLD|Default 0<br>Milliseconds to wait for file size to stabilize. A high value may be helpful when watching network shares but will lower responsiveness.|
-|WATCHER_USE_POLLING|Default "true"<br>Use file system events and polling. Set this to true to successfully watch files over a network.| 
 
 ## Logging
 
