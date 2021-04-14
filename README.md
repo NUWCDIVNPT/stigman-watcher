@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="125" src="icon.svg">
+  <img width="125" src="https://raw.githubusercontent.com/NUWCDIVNPT/stigman-watcher/main/icon.svg">
 </p>
 <h1 align="center"> STIG Manager Watcher </h1>
 
