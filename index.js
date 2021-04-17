@@ -1,183 +1,78 @@
 #!/usr/bin/env node
 
-const {logger} = require('./lib/logger')
+const { logger, getSymbol } = require('./lib/logger')
 const config = require('./lib/args')
 if (!config) {
   logger.end()
+  return
 }
-else {
-  const auth = require('./lib/auth')
-  const api = require('./lib/api')
-  const cargo = require('./lib/cargo')
-  const chokidar = require('chokidar');
-  const fs = require('fs').promises
-  const parsers = require('./lib/parsers')
-  const Queue = require('better-queue')
-  const {serializeError} = require('serialize-error')
-  const {resolve} = require('path')
+const auth = require('./lib/auth')
+const api = require('./lib/api')
+const {serializeError} = require('serialize-error')
 
-  const cargoQueue = new Queue(cargo.cklsHandler, {
-    id: 'file',
-    batchSize: config.cargoSize,
-    batchDelay: config.oneShot ? 0 : config.cargoDelay,
-    // batchDelayTimeout: config.cargoDelay
-  })
-  cargoQueue
-  .on('batch_failed', (err) => {
-    logger.error( {
-      component: 'batch',
-      message: err?.message,
+run()
+
+async function run() {
+  try {
+    logger.info({
+      component: 'main',
+      message: 'running',
+      config: getObfuscatedConfig(config)
     })
-  })
-  .on('batch_finish', (a, b, c) => {
-    // console.log(`waiting ${cargoQueue._store._queue.length}`)
-  })
-  .on('drain', () => {
-    if (config.oneShot) {
-      logger.info({
-        component: 'watcher',
-        message: 'finished one shot mode'
-      })
-      process.exit()
+    // await logger.end()
+    // process.exit()
+    
+    await preflightServices()
+    if (config.mode === 'events') {
+      const watcher = require('./lib/events')
+      watcher.startFsEventWatcher()
     }
-  })
-
-  const parseQueue = new Queue (parseFile, {
-    concurrent: 3
-  })
-
-  run()
-
-  async function parseFile (file, cb) {
-    const component = 'parser'
-    try {
-      const extension = file.substring(file.lastIndexOf(".") + 1)
-      let parser, type
-      if (extension.toLowerCase() === 'ckl') {
-        parser = parsers.reviewsFromCkl
-        type = 'CKL'
-      }
-      else if (extension.toLowerCase() === 'xml') {
-        parser = parsers.reviewsFromScc
-        type = "XCCDF"
-      }
-      else {
-        logger.warn({
-          component: component,
-          message: `Ignored unknown extension`,
-          file: file
-        })
-        return false
-      }
-      const data = await fs.readFile(file)
-      logger.debug({
-        component: component,
-        message: `Start parse`,
-        file: file
-      })
-      let parseResult = parser(data)
-      parseResult.file = file
-      logger.debug({
-        component: component,
-        message: `Queue parsed results`,
-        file: file
-      })
-      cargoQueue.push( parseResult )
-    }
-    catch (e) {
-      logger.warn({
-        component: component,
-        message: e.message,
-        file: file
-      })
-      cb( e, undefined)
-    }
-    finally {
-      cb()
+    else if (config.mode === 'scan') {
+      const scanner = require('./lib/scan')
+      scanner.startScanner()
     }
   }
-
-
-  async function run() {
-    try {
-      logger.info({
-        component: 'watcher',
-        message: 'configured',
-        config: secureConfig(config)
-      })
-      const token = await auth.getToken()
-      logger.info({ component: 'watcher', message: `preflight token request suceeded`})
-      const assets = await api.getCollectionAssets(config.collectionId)
-      const stigs = await api.getInstalledStigs()
-      logger.info({ component: 'watcher', message: `prefilght api requests suceeded`})
-
-      const awaitWriteFinishVal = config.stabilityThreshold ? { stabilityThreshold: config.stabilityThreshold } : false
-      const watcher = chokidar.watch(config.path, {
-        ignored: config.ignoreDirs,
-        ignoreInitial: !config.addExisting,
-        persistent: true,
-        usePolling: config.usePolling,
-        awaitWriteFinish: awaitWriteFinishVal
-      })
-
-      watcher.on('ready', e => {
-       if (config.oneShot) {
-         watcher.close()
-       }
-      })
-
-      watcher.on('error', e => {
-        logger.error({
-          component: 'watcher',
-          error: serializeError(e)
-        })
-      })
-
-      watcher.on('add', file  => {
-        // chokidar glob argument doesn't work for UNC Windows, so we check file extension here
-        const extension = file.substring(file.lastIndexOf(".") + 1)
-        if (extension.toLowerCase() === 'ckl' || extension.toLowerCase() === 'xml') {
-          logger.info({
-            component: 'watcher',
-            message: 'File system event',
-            event:  'add',
-            file: file
-          })
-          parseQueue.push( file )
-        }
-      })
-      logger.info({ component: 'watcher', message: `watching`, path: resolve(config.path) })
+  catch (e) {
+    const errorObj = {
+      component: e.component || 'main',
+      message: e.message,
     }
-    catch (e) {
-      const errorObj = {
-        component: e.component || 'watcher',
-        message: e.message,
+    if (e.request) {
+      errorObj.request = {
+        method: e.request.options?.method,
+        url: e.request.requestUrl,
+        body: getSymbol(e.request, 'body')
       }
-      if (e.request) {
-        errorObj.request = {
-          method: e.request.options?.method,
-          url: e.request.requestUrl
-        }
-      }
-      if (e.response) {
-        errorObj.response = {
-          status: e.response.statusCode,
-          body: e.response.body
-        }
-      }
-      if (e.name !== 'RequestError' && e.name !== 'HTTPError') {
-        errorObj.error = serializeError(e)
-      }
-      logger.error(errorObj)
-      logger.end()
     }
+    if (e.response) {
+      errorObj.response = {
+        status: e.response.statusCode,
+        body: e.response.body
+      }
+    }
+    if (e.name !== 'RequestError' && e.name !== 'HTTPError') {
+      errorObj.error = serializeError(e)
+    }
+    logger.error(errorObj)
+    await logger.end()
   }
+}
 
-  function secureConfig(config) {
-    const securedConfig = {...config}
-    if (securedConfig.clientSecret) {
-      securedConfig.clientSecret = '[hidden]'
-    }
-    return securedConfig
+async function preflightServices () {
+  try {
+    await auth.getToken()
+    logger.info({ component: 'main', message: `preflight token request suceeded`})
+    await api.getCollectionAssets(config.collectionId)
+    await api.getInstalledStigs()
+    logger.info({ component: 'main', message: `prefilght api requests suceeded`})
   }
+  finally {}
+}
+
+function getObfuscatedConfig (config) {
+  const securedConfig = {...config}
+  if (securedConfig.clientSecret) {
+    securedConfig.clientSecret = '[hidden]'
+  }
+  return securedConfig
 }
