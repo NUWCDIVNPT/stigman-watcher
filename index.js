@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const minApiVersion = '1.0.43'
+const minApiVersion = '1.1.0'
 
 const { logger, getSymbol } = require('./lib/logger')
 const config = require('./lib/args')
@@ -68,7 +68,7 @@ async function hasMinApiVersion () {
     return true
   }
   else {
-    throw( {message:'Remote API version is not compatible with this release.'} )
+    throw( `Remote API version ${remoteApiVersion} is not compatible with this release.` )
   }
 }
 
