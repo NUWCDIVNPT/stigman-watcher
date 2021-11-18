@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+const minApiVersion = '1.0.43'
+
 const { logger, getSymbol } = require('./lib/logger')
 const config = require('./lib/args')
 if (!config) {
@@ -58,15 +60,25 @@ async function run() {
   }
 }
 
-async function preflightServices () {
-  try {
-    await auth.getToken()
-    logger.info({ component: 'main', message: `preflight token request suceeded`})
-    await api.getCollectionAssets(config.collectionId)
-    await api.getInstalledStigs()
-    logger.info({ component: 'main', message: `prefilght api requests suceeded`})
+async function hasMinApiVersion () {
+  const semverGte = require('semver/functions/gte')
+  const [remoteApiVersion] = await api.getDefinition('$.info.version')
+  logger.info({ component: 'main', message: `preflight API version`, minApiVersion, remoteApiVersion})
+  if (semverGte(remoteApiVersion, minApiVersion)) {
+    return true
   }
-  finally {}
+  else {
+    throw( {message:'Remote API version is not compatible with this release.'} )
+  }
+}
+
+async function preflightServices () {
+  await hasMinApiVersion()
+  await auth.getToken()
+  logger.info({ component: 'main', message: `preflight token request suceeded`})
+  await api.getCollectionAssets(config.collectionId)
+  await api.getInstalledStigs()
+  logger.info({ component: 'main', message: `prefilght api requests suceeded`})
 }
 
 function getObfuscatedConfig (config) {
