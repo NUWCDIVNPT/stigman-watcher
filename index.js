@@ -78,6 +78,7 @@ async function preflightServices () {
   logger.info({ component: 'main', message: `preflight token request suceeded`})
   await api.getCollectionAssets(config.collectionId)
   await api.getInstalledStigs()
+  api.scapBenchmarkMap = await api.getScapBenchmarkMap()
   logger.info({ component: 'main', message: `prefilght api requests suceeded`})
 }
 
