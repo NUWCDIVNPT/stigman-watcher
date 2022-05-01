@@ -19,7 +19,7 @@
     "commander": "^7.2.0",
     "dotenv": "^8.2.0",
     "fast-glob": "^3.2.5",
-    "fast-xml-parser": "^3.19.0",
+    "fast-xml-parser": "^4.0.7",
     "got": "^11.8.2",
     "he": "^1.2.0",
     "jsonwebtoken": "^8.5.1",

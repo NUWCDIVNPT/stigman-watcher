@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const minApiVersion = '1.1.0'
+const minApiVersion = '1.2.7'
 
 const { logger, getSymbol } = require('./lib/logger')
 const config = require('./lib/args')
@@ -21,8 +21,6 @@ async function run() {
       message: 'running',
       config: getObfuscatedConfig(config)
     })
-    // await logger.end()
-    // process.exit()
     
     await preflightServices()
     if (config.mode === 'events') {
@@ -35,29 +33,33 @@ async function run() {
     }
   }
   catch (e) {
-    const errorObj = {
-      component: e.component || 'main',
-      message: e.message,
-    }
-    if (e.request) {
-      errorObj.request = {
-        method: e.request.options?.method,
-        url: e.request.requestUrl,
-        body: getSymbol(e.request, 'body')
-      }
-    }
-    if (e.response) {
-      errorObj.response = {
-        status: e.response.statusCode,
-        body: e.response.body
-      }
-    }
-    if (e.name !== 'RequestError' && e.name !== 'HTTPError') {
-      errorObj.error = serializeError(e)
-    }
-    logger.error(errorObj)
+    logError(e)
     await logger.end()
   }
+}
+
+function logError(e) {
+  const errorObj = {
+    component: e.component || 'main',
+    message: e.message,
+  }
+  if (e.request) {
+    errorObj.request = {
+      method: e.request.options?.method,
+      url: e.request.requestUrl,
+      body: getSymbol(e.request, 'body')
+    }
+  }
+  if (e.response) {
+    errorObj.response = {
+      status: e.response.statusCode,
+      body: e.response.body
+    }
+  }
+  if (e.name !== 'RequestError' && e.name !== 'HTTPError') {
+    errorObj.error = serializeError(e)
+  }
+  logger.error(errorObj)
 }
 
 async function hasMinApiVersion () {
@@ -76,9 +78,24 @@ async function preflightServices () {
   await hasMinApiVersion()
   await auth.getToken()
   logger.info({ component: 'main', message: `preflight token request suceeded`})
-  await api.getCollectionAssets(config.collectionId)
-  await api.getInstalledStigs()
-  api.scapBenchmarkMap = await api.getScapBenchmarkMap()
+  const promises = [
+    api.getCollection(config.collectionId),
+    api.getCollectionAssets(config.collectionId),
+    api.getInstalledStigs(),
+    api.getScapBenchmarkMap()
+  ]
+  await Promise.all(promises)
+  setInterval(refreshCollection, 10 * 60000)
+  
+  // OAuth scope 'stig-manager:user:read' was not required for early versions of Watcher
+  // For now, fail gracefully if we are blocked from calling /user
+  try {
+    await api.getUser()
+    setInterval(refreshUser, 10 * 60000)
+  }
+  catch (e) {
+    logger.warn({ component: 'main', message: `preflight user request failed; token may be missing scope 'stig-manager:user:read'? Watcher will not set {"status": "accepted"}`})
+  }
   logger.info({ component: 'main', message: `prefilght api requests suceeded`})
 }
 
@@ -88,4 +105,22 @@ function getObfuscatedConfig (config) {
     securedConfig.clientSecret = '[hidden]'
   }
   return securedConfig
+}
+
+async function refreshUser() {
+  try {
+    await api.getUser()
+  }
+  catch (e) {
+    logError(e)
+  }
+}
+
+async function refreshCollection() {
+  try {
+    await api.getCollection(config.collectionId)
+  }
+  catch (e) {
+    logError(e)
+  }
 }

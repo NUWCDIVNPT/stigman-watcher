@@ -3,3 +3,4 @@ watched/
 .vscode/
 .env
 *.log
+log.json
