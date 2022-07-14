@@ -3,7 +3,7 @@
 </p>
 <h1 align="center"> STIG Manager Watcher </h1>
 
-<a href="https://npmjs.org/package/stigman-watcher"><img src="https://img.shields.io/badge/npm-1.2.3-green"></a>
+<a href="https://npmjs.org/package/stigman-watcher"><img src="https://img.shields.io/npm/v/stigman-watcher"></a>
 
 A [STIG Manager](https://github.com/nuwcdivnpt/stig-manager) CLI client that watches a path for test result files formatted as CKL or XCCDF and posts the results to a Collection.
 
