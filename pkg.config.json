@@ -1,0 +1,8 @@
+{
+    "name": "stigman-watcher",
+    "bin": "./index.js",
+    "pkg": {
+        "targets": [ "node18-win", "node18-linuxstatic" ],
+        "outputPath": "./bin"
+    }
+}
