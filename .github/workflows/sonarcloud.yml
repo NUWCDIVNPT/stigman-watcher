@@ -33,7 +33,7 @@ jobs:
         uses: SonarSource/sonarcloud-github-action@v2.0.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_API }} # Needed to push to SonarCloud
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_WATCHER }} # Needed to push to SonarCloud
         with:
           # Additional arguments for the sonarcloud scanner
           args: -Dsonar.projectKey=NUWCDIVNPT_stigman-watcher
