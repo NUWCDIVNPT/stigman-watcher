@@ -3,6 +3,7 @@
     "bin": "./index.js",
     "pkg": {
         "targets": [ "node18-win", "node18-linuxstatic" ],
+        "assets": ["./node_modules/stig-manager-client-modules/index.cjs"],
         "outputPath": "./bin"
     }
 }
