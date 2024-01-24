@@ -3,6 +3,7 @@
 # This file is used to build binaries on a Linux device. It is not tested elsewhere, yet.
 # Requires:
 # - Node.js and module "pkg" (npm install -g pkg)
+# - jq
 # - zip
 # - tar
 # - gpg, if you wish to produce detached signatures
@@ -28,19 +29,20 @@ printf "[BUILD_TASK] Fetching node_modules\n"
 rm -rf ./node_modules
 npm ci
 
-describe=$(git describe --tags | sed 's/\(.*\)-.*/\1/')
-printf "\n[BUILD_TASK] Using version string: $describe\n"
+# version=$(git describe --tags | sed 's/\(.*\)-.*/\1/')
+version=$(jq -r .version package.json)
+printf "\n[BUILD_TASK] Using version string: $version\n"
 
 # Make binaries
 printf "\n[BUILD_TASK] Building binaries in $bin_dir\n"
 pkg -C gzip --public --public-packages=* --no-bytecode pkg.config.json
 # Windows archive
-windows_archive=$dist_dir/stigman-watcher-win-$describe.zip
+windows_archive=$dist_dir/stigman-watcher-win-$version.zip
 printf "\n[BUILD_TASK] Creating $windows_archive\n"
 zip --junk-paths $windows_archive ./dotenv-example $bin_dir/stigman-watcher-win.exe
 [[ $1 == "--sign" ]] && gpg --keyring $keyring --default-key $signing_key --armor --detach-sig  $windows_archive
 # Linux archive
-linux_archive=$dist_dir/stigman-watcher-linux-$describe.tar.gz
+linux_archive=$dist_dir/stigman-watcher-linux-$version.tar.gz
 printf "\n[BUILD_TASK] Creating $linux_archive\n"
 tar -czvf $linux_archive --xform='s|^|stigman-watcher/|S' -C . dotenv-example -C $bin_dir stigman-watcher-linuxstatic
 [[ $1 == "--sign" ]] && gpg --keyring $keyring --default-key $signing_key --armor --detach-sig $linux_archive
