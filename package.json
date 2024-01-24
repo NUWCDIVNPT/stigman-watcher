@@ -4,11 +4,14 @@
   "description": "CLI that watches a path for STIG test result files on behalf of a STIG Manager Collection.",
   "main": "index.js",
   "bin": {
-    "stigman-watcher": "./index.js"
+    "stigman-watcher": "index.js"
   },
   "author": "carl.a.smigielski@saic.com",
   "license": "MIT",
-  "repository": "github:nuwcdivnpt/stigman-watcher",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nuwcdivnpt/stigman-watcher.git"
+  },
   "engines": {
     "node": ">=14"
   },
