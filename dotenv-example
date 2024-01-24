@@ -1,6 +1,6 @@
 WATCHER_ADD_EXISTING=true
 WATCHER_API_BASE=http://localhost:54000/api
-WATCHER_AUTHORITY=http://localhost:8080/auth/realms/stigman
+WATCHER_AUTHORITY=http://localhost:8080/realms/stigman
 WATCHER_CARGO_DELAY=2000
 WATCHER_CARGO_SIZE=25
 WATCHER_CLIENT_ID=stigman-watcher
