@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { logger, getSymbol } from './lib/logger.js'
-import  {options}  from './lib/args.js'
-if (!options) {
+import { options, configValid }  from './lib/args.js'
+if (!configValid) {
   logger.end()
   process.exit(1)
 }
