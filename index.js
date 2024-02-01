@@ -2,14 +2,15 @@
 import { logger, getSymbol } from './lib/logger.js'
 import { options, configValid }  from './lib/args.js'
 if (!configValid) {
+  logger.error({ component: 'main', message: 'invalid configuration... Exiting'})
   logger.end()
   process.exit(1)
 }
-import { startFsEventWatcher } from './lib/events.js'
+import startFsEventWatcher from './lib/events.js'
 import { getOpenIDConfiguration, getToken } from './lib/auth.js'
-import { getDefinition, getCollection, getCollectionAssets, getInstalledStigs, getScapBenchmarkMap, getUser } from './lib/api.js'
+import * as api from './lib/api.js'
 import { serializeError } from 'serialize-error'
-import { startScanner } from './lib/scan.js'
+import startScanner from './lib/scan.js'
 import semverGte from 'semver/functions/gte.js'
 
 const minApiVersion = '1.2.7'
@@ -34,7 +35,7 @@ async function run() {
   }
   catch (e) {
     logError(e)
-    await logger.end()
+    logger.end()
   }
 }
 
@@ -63,13 +64,13 @@ function logError(e) {
 }
 
 async function hasMinApiVersion () {
-  const [remoteApiVersion] = await getDefinition('$.info.version')
+  const [remoteApiVersion] = await api.getDefinition('$.info.version')
   logger.info({ component: 'main', message: `preflight API version`, minApiVersion, remoteApiVersion})
   if (semverGte(remoteApiVersion, minApiVersion)) {
     return true
   }
   else {
-    throw( `Remote API version ${remoteApiVersion} is not compatible with this release.` )
+    throw new Error(`Remote API version ${remoteApiVersion} is not compatible with this release.`)
   }
 }
 
@@ -79,10 +80,10 @@ async function preflightServices () {
   await getToken()
   logger.info({ component: 'main', message: `preflight token request suceeded`})
   const promises = [
-    getCollection(options.collectionId),
-    getCollectionAssets(options.collectionId),
-    getInstalledStigs(),
-    getScapBenchmarkMap()
+    api.getCollection(options.collectionId),
+    api.getCollectionAssets(options.collectionId),
+    api.getInstalledStigs(),
+    api.getScapBenchmarkMap()
   ]
   await Promise.all(promises)
   setInterval(refreshCollection, 10 * 60000)
@@ -90,7 +91,7 @@ async function preflightServices () {
   // OAuth scope 'stig-manager:user:read' was not required for early versions of Watcher
   // For now, fail gracefully if we are blocked from calling /user
   try {
-    await getUser()
+    await api.getUser()
     setInterval(refreshUser, 10 * 60000)
   }
   catch (e) {
@@ -109,7 +110,7 @@ function getObfuscatedConfig (options) {
 
 async function refreshUser() {
   try {
-    await getUser()
+    await api.getUser()
   }
   catch (e) {
     logError(e)
@@ -118,7 +119,7 @@ async function refreshUser() {
 
 async function refreshCollection() {
   try {
-    await getCollection(options.collectionId)
+    await api.getCollection(options.collectionId)
   }
   catch (e) {
     logError(e)
