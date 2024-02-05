@@ -10,7 +10,7 @@ import startFsEventWatcher from './lib/events.js'
 import { getOpenIDConfiguration, getToken } from './lib/auth.js'
 import * as api from './lib/api.js'
 import { serializeError } from 'serialize-error'
-import startScanner from './lib/scan.js'
+import startScanner, {setUpHistory} from './lib/scan.js'
 import semverGte from 'semver/functions/gte.js'
 
 const minApiVersion = '1.2.7'
@@ -30,7 +30,8 @@ async function run() {
       startFsEventWatcher()
     }
     else if (options.mode === 'scan') {
-      startScanner()
+      setUpHistory(options)
+      startScanner(options)
     }
   }
   catch (e) {
