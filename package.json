@@ -6,6 +6,10 @@
   "bin": {
     "stigman-watcher": "index.js"
   },
+  "scripts": {
+    "test": "mocha  './test/**/*.test.js'",
+    "test:watch": "nodemon --ext 'js' --exec 'npm test'"
+  },
   "type": "module",
   "author": "carl.a.smigielski@saic.com",
   "license": "MIT",
@@ -33,5 +37,13 @@
     "serialize-error": "^8.0.1",
     "stig-manager-client-modules": "github:nuwcdivnpt/stig-manager-client-modules#semver:^1.0.0",
     "winston": "^3.3.3"
+  },
+  "devDependencies": {
+    "chai": "^5.0.3",
+    "esmock": "^2.6.3",
+    "mocha": "^10.2.0",
+    "mock-fs": "^5.2.0",
+    "nodemon": "^3.0.3",
+    "sinon": "^17.0.1"
   }
 }
