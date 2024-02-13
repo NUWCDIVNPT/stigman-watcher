@@ -1,156 +1,245 @@
 import { expect } from 'chai'
 import sinon from 'sinon'
-import fs from 'node:fs'
-import { dirname } from 'path'
-import path from 'node:path'
-import { fileURLToPath } from 'url'
-import {
+import fs from 'fs'
+import path from 'path'
+import startScanner, {
   initHistory,
   getHistory,
   addToHistory,
+  cancelQueue,
   removeFromHistory,
-  setHistory,
-  saveCurrentHistoryToFile,
+  exitSafely,
   flushWriteQueue
 } from '../lib/scan.js'
+import { logger } from '../lib/logger.js'
 
-const writeFile = (file, data) =>
-  new Promise((resolve, reject) => {
-    fs.writeFile(file, data, err => {
-      if (err) reject(err)
-      else resolve()
-    })
+describe('testing add/remove/init functions  ', function () {
+  const historyFile =
+    './watcher.test.history'
+  const path =
+    './test/testFiles/test1'
+
+  let logStub;
+
+  this.beforeEach(function () {
+    fs.writeFileSync(historyFile, '')
+    logStub = sinon.stub(logger, 'info');
   })
 
-const unlink = file =>
-  new Promise((resolve, reject) => {
-    fs.unlink(file, err => {
-      if (err) reject(err)
-      else resolve()
-    })
+  this.afterEach(function () {
+    flushWriteQueue()
+    fs.unlinkSync(historyFile)
+    logStub.restore();
   })
+  
 
-const rm = dir =>
-  new Promise((resolve, reject) => {
-    fs.rm(dir, { recursive: true, force: true }, err => {
-      if (err) reject(err)
-      else resolve()
-    })
-  })
-const mkdir = dir =>
-  new Promise((resolve, reject) => {
-    fs.mkdir(dir, { recursive: true }, err => {
-      if (err) reject(err)
-      else resolve()
-    })
-  })
-async function setUpMockEnvironment (
-  mockDirPath,
-  historyDirPath,
-  mockFiles,
-  mockHistoryFilePath,
-  initialHistoryContent
-) {
-  // Create mock directory
-  await mkdir(mockDirPath)
-
-  await mkdir(historyDirPath)
-
-  // Create mock files
-  for (const file of mockFiles) {
-    const filePath = path.join(mockDirPath, file)
-    await writeFile(filePath, 'Dummy content...')
-  }
-
-  // Create and write initial content to mock history file
-  await writeFile(mockHistoryFilePath, initialHistoryContent)
-}
-
-async function tearDownMockEnvironment (
-  mockDirPath,
-  historyDirPath,
-  mockFiles,
-  mockHistoryFilePath
-) {
-  // Delete mock files
-  for (const file of mockFiles) {
-    const filePath = path.join(mockDirPath, file)
-    await unlink(filePath)
-  }
-
-  // Remove mock directory
-  await rm(mockDirPath)
-
-  // Delete mock history file and remove history directory
-  await unlink(mockHistoryFilePath)
-  await rm(historyDirPath)
-}
-
-describe('startScanner history file testing', function () {
-  const mockDirPath = path.join(process.cwd(), 'mock-directory')
-  const historyDirPath = path.join(process.cwd(), 'history-directory') // Separate directory for history
-  const mockFiles = [
-    'mockFile1.ckl',
-    'mockFile2.xml',
-    'mockFile3.cklb',
-    'mockFile4.cklb',
-    'mockFile5.cklb'
-  ]
-  const mockHistoryFilePath = path.join(historyDirPath, 'history.txt')
-  const initialHistoryContent = ''
-
-  beforeEach(async () => {
-    await setUpMockEnvironment(
-      mockDirPath,
-      historyDirPath,
-      mockFiles,
-      mockHistoryFilePath,
-      initialHistoryContent
-    )
-  })
-
-  afterEach(async () => {
-    await tearDownMockEnvironment(
-      mockDirPath,
-      historyDirPath,
-      mockFiles,
-      mockHistoryFilePath
-    )
-  })
-
-  it('should add 5 items to history and see them in the history file ', async function () {
+  it('should correctly create an empty history file', async function () {
+    this.timeout(5000)
     const options = {
-      historyFile: mockHistoryFilePath,
-      path: mockDirPath,
-      scanInterval: 10000,
+      historyFile: historyFile,
+      path: path,
+      scanInterval: 15000,
       oneShot: true,
-      historyCargoSize: 4,
+      historyCargoSize: 5,
       historyCargoDelay: 10000
     }
+
     initHistory(options)
 
-    const startingHistoryContent = fs.readFileSync(mockHistoryFilePath, 'utf-8')
+    expect(fs.existsSync(historyFile)).to.be.true
+    expect(fs.readFileSync(historyFile, 'utf8')).to.equal('')
+  })
 
-    const startingMockdir = fs.readdirSync(mockDirPath)
-
-    console.log('mickdir', JSON.stringify(startingMockdir))
-
-    console.log('starting', startingHistoryContent)
-
-    for await (const file of mockFiles) {
-      addToHistory(file)
+  it('should correctly add to history file', async function () {
+    this.timeout(5000)
+    const options = {
+      historyFile: historyFile,
+      path: path,
+      scanInterval: 15000,
+      oneShot: true,
+      historyCargoSize: 1,
+      historyCargoDelay: 10000
     }
 
-    // await startScanner(options)
+    initHistory(options)
 
-    //  flushWriteQueue()
+    //await startScanner(options)
 
-    setTimeout(() => {}, 1000)
+    const file =
+      './test/testFiles/test1/file1.ckl'
 
-    const set = getHistory()
+    addToHistory(file)
 
-    const historyContent = fs.readFileSync(mockHistoryFilePath, 'utf-8')
+    await new Promise(resolve => setTimeout(resolve, 3000))
 
-    console.log('ending', JSON.stringify(historyContent))
+    const data = fs.readFileSync(historyFile, 'utf8')
+
+    expect(data).to.equal(file + '\n')
+  })
+
+  it('should correctly remove from history file', async function () {
+    this.timeout(5000)
+    const options = {
+      historyFile: historyFile,
+      path: path,
+      scanInterval: 15000,
+      oneShot: true,
+      historyCargoSize: 1,
+      historyCargoDelay: 10000
+    }
+
+    initHistory(options)
+
+    const file =
+    './test/testFiles/test1/file1.ckl'
+
+    addToHistory(file)
+
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
+    removeFromHistory(file)
+
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
+    const data = fs.readFileSync(historyFile, 'utf8')
+
+    expect(data).to.equal('')
+  })
+})
+
+describe('testing starting with empty history file and adding entries', function () {
+  this.timeout(5000)
+  const historyFile =
+    './watcher.test.history'
+  const path =
+    './test/testFiles/test1'
+
+    let logStub;
+  this.beforeEach(function () {
+    fs.writeFileSync(historyFile, '')
+    logStub = sinon.stub(logger, 'info');
+  })
+
+  this.afterEach(function () {
+    flushWriteQueue
+    fs.unlinkSync(historyFile)
+    logStub.restore();
+  })
+
+  it('should correctly identify new files and update the history file', async function () {
+    this.timeout(5000)
+    const options = {
+      historyFile: historyFile,
+      path: path,
+      scanInterval: 15000,
+      oneShot: true,
+      historyCargoSize: 5,
+      historyCargoDelay: 10000
+    }
+
+    // create history file
+    await initHistory(options)
+
+    // read the history file
+    const data2 = fs.readFileSync(historyFile, 'utf8')
+
+    // get files in scanned path var
+    const files = fs.readdirSync(path)
+
+    // start scanning
+    await startScanner(options)
+
+    // wait for queue to fire off and write to disk
+    await new Promise(resolve => setTimeout(resolve, 2500))
+
+    // read the history file
+    const data = fs.readFileSync(historyFile, 'utf8')
+    const lines = data.split('\n').filter(line => line.trim() !== '')
+
+    expect(lines.length).to.equal(5)
+
+    const expectedHistoryEntries = [
+      './test/testFiles/test1/file1.ckl',
+      './test/testFiles/test1/file2.ckl',
+      './test/testFiles/test1/file3.ckl',
+      './test/testFiles/test1/file4.ckl',
+      './test/testFiles/test1/file5.ckl'
+    ]
+
+    for (const entry of expectedHistoryEntries) {
+      expect(lines).to.include(entry)
+    }
+  })
+})
+
+
+describe('testing finding intersection of history and scanned files in order to remove entries from historty file ', function () {
+  this.timeout(5000)
+  const historyFile =
+    './watcher.test.history'
+  const path =
+    './test/testFiles/test1'
+
+  let logStub;
+
+  this.beforeEach(function () {
+    const data = [
+      './test/testFiles/test1/file1.ckl',
+      './test/testFiles/test1/file2.ckl',
+    ].join('\n');
+    fs.writeFileSync(historyFile, data);
+    logStub = sinon.stub(logger, 'info');
+  })
+
+  this.afterEach(function () {
+    flushWriteQueue
+    fs.unlinkSync(historyFile)
+    logStub.restore();
+  })
+
+  it('should correctly identify new files and update the history file', async function () {
+    this.timeout(5000)
+    const options = {
+      historyFile: historyFile,
+      path: path,
+      scanInterval: 15000,
+      oneShot: true,
+      historyCargoSize: 5,
+      historyCargoDelay: 10000
+    }
+
+    // create history file
+    await initHistory(options)
+
+    // read the history file
+    const data2 = fs.readFileSync(historyFile, 'utf8')
+    const lines2 = data2.split('\n').filter(line => line.trim() !== '')
+
+    // get files in scanned path var
+    const files = fs.readdirSync(path)
+
+    // start scanning
+    await startScanner(options)
+
+    // wait for queue to fire off and write to disk
+    await new Promise(resolve => setTimeout(resolve, 2500))
+
+    // read the history file
+    const data = fs.readFileSync(historyFile, 'utf8')
+    const lines = data.split('\n').filter(line => line.trim() !== '')
+
+    expect(lines.length).to.equal(5)
+
+    const expectedHistoryEntries = [
+      './test/testFiles/test1/file1.ckl',
+      './test/testFiles/test1/file2.ckl',
+      './test/testFiles/test1/file3.ckl',
+      './test/testFiles/test1/file4.ckl',
+      './test/testFiles/test1/file5.ckl'
+    ]
+
+    for (const entry of expectedHistoryEntries) {
+      expect(lines).to.include(entry)
+    }
   })
 })
