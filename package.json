@@ -7,7 +7,7 @@
     "stigman-watcher": "index.js"
   },
   "scripts": {
-    "test": "mocha  './test/**/*.test.js'",
+    "test": "c8 --reporter=html --reporter=text mocha  './test/**/*.test.js'",
     "test:watch": "nodemon --ext 'js' --exec 'npm test'"
   },
   "type": "module",
@@ -39,6 +39,7 @@
     "winston": "^3.3.3"
   },
   "devDependencies": {
+    "c8": "^9.1.0",
     "chai": "^5.0.3",
     "esbuild": "^0.20.0",
     "mocha": "^10.2.0",
