@@ -8,10 +8,11 @@ import startScanner, {
   setHistory
 } from '../../lib/scan.js'
 import { logger } from '../../lib/logger.js'
+import path from 'path'
 
 describe('testing add/remove/init functions  ', function () {
   const historyFile = './watcher.test.history'
-  const path = './test/testFiles/TestScannedDirectory'
+  const scannedPath = './test/testFiles/TestScannedDirectory'
 
   let logStub
 
@@ -28,7 +29,7 @@ describe('testing add/remove/init functions  ', function () {
   it('should correctly create an empty history file', async function () {
     const options = {
       historyFile: historyFile,
-      path: path,
+      path: scannedPath,
       scanInterval: 15000,
       oneShot: true,
       historyWriteInterval: 10
@@ -43,7 +44,7 @@ describe('testing add/remove/init functions  ', function () {
   it('should correctly add to history file', async function () {
     const options = {
       historyFile: historyFile,
-      path: path,
+      path: scannedPath,
       scanInterval: 5000,
       oneShot: true,
       historyWriteInterval: 10
@@ -51,7 +52,7 @@ describe('testing add/remove/init functions  ', function () {
 
     initHistory(options)
 
-    const file = './test/testFiles/TestScannedDirectory/file1.ckl'
+    const file = './test/testFiles/file1.ckl'
 
     addToHistory(file)
 
@@ -66,7 +67,7 @@ describe('testing add/remove/init functions  ', function () {
   it('should correctly remove from history file', async function () {
     const options = {
       historyFile: historyFile,
-      path: path,
+      path: scannedPath,
       scanInterval: 5000,
       oneShot: true,
       historyWriteInterval: 10
@@ -74,7 +75,7 @@ describe('testing add/remove/init functions  ', function () {
 
     initHistory(options)
 
-    const file = './test/testFiles/TestScannedDirectory/file1.ckl'
+    const file = './test/testFiles/file1.ckl'
 
     addToHistory(file)
 
@@ -96,19 +97,32 @@ describe('testing add/remove/init functions  ', function () {
 
 describe('testing starting with empty history file and adding entries', function () {
   const historyFile = './watcher.test.history'
-  const path = './test/testFiles/TestScannedDirectory'
-
+  const scannedPath = './test/testFiles/'
+  const fileContents = '<?xml version="1.0" encoding="UTF-8"?>'
   let logStub, warnStub
 
   beforeEach(function () {
     fs.writeFileSync(historyFile, '')
+    setHistory(new Set())
+
+    fs.mkdirSync(scannedPath, { recursive: true })
+    for (let i = 1; i <= 5; i++) {
+      fs.writeFileSync(path.join(scannedPath, `file${i}.ckl`), fileContents)
+    }
+
     logStub = sinon.stub(logger, 'info')
     warnStub = sinon.stub(logger, 'warn')
-    setHistory(new Set())
   })
 
   afterEach(function () {
     fs.unlinkSync(historyFile)
+
+    const files = fs.readdirSync(scannedPath)
+    for (const file of files) {
+      fs.unlinkSync(path.join(scannedPath, file))
+    }
+    fs.rmSync(scannedPath, { recursive: true })
+
     logStub.restore()
     warnStub.restore()
   })
@@ -116,7 +130,7 @@ describe('testing starting with empty history file and adding entries', function
   it('should correctly identify the 5 new files and update the history file with all 5', async function () {
     const options = {
       historyFile: historyFile,
-      path: path,
+      path: scannedPath,
       scanInterval: 5000,
       oneShot: true,
       historyWriteInterval: 10
@@ -139,11 +153,11 @@ describe('testing starting with empty history file and adding entries', function
     expect(lines.length).to.equal(5)
 
     const expectedHistoryEntries = [
-      './test/testFiles/TestScannedDirectory/file1.ckl',
-      './test/testFiles/TestScannedDirectory/file2.ckl',
-      './test/testFiles/TestScannedDirectory/file3.ckl',
-      './test/testFiles/TestScannedDirectory/file4.ckl',
-      './test/testFiles/TestScannedDirectory/file5.ckl'
+      './test/testFiles/file1.ckl',
+      './test/testFiles/file2.ckl',
+      './test/testFiles/file3.ckl',
+      './test/testFiles/file4.ckl',
+      './test/testFiles/file5.ckl'
     ]
 
     for (const entry of expectedHistoryEntries) {
@@ -154,7 +168,8 @@ describe('testing starting with empty history file and adding entries', function
 
 describe('testing starting with entries in history file that are also in the scanned directory', function () {
   const historyFile = './watcher.test.history'
-  const path = './test/testFiles/TestScannedDirectory'
+  const scannedPath = './test/testFiles/'
+  const fileContents = '<?xml version="1.0" encoding="UTF-8"?>'
 
   let logStub, warnStub
 
@@ -163,13 +178,26 @@ describe('testing starting with entries in history file that are also in the sca
       historyFile,
       './test/testFiles/TestScannedDirectory/file1.ckl\n./test/testFiles/TestScannedDirectory/file2.ckl\n'
     )
+    setHistory(new Set())
+
+    fs.mkdirSync(scannedPath, { recursive: true })
+    for (let i = 1; i <= 5; i++) {
+      fs.writeFileSync(path.join(scannedPath, `file${i}.ckl`), fileContents)
+    }
+
     logStub = sinon.stub(logger, 'info')
     warnStub = sinon.stub(logger, 'warn')
-    setHistory(new Set())
   })
 
   afterEach(function () {
     fs.unlinkSync(historyFile)
+
+    const files = fs.readdirSync(scannedPath)
+    for (const file of files) {
+      fs.unlinkSync(path.join(scannedPath, file))
+    }
+    fs.rmSync(scannedPath, { recursive: true })
+
     logStub.restore()
     warnStub.restore()
   })
@@ -177,7 +205,7 @@ describe('testing starting with entries in history file that are also in the sca
   it('should correctly return the two files previously in the history file aswell as the other three in the scanned directory.', async function () {
     const options = {
       historyFile: historyFile,
-      path: path,
+      path: scannedPath,
       scanInterval: 5000,
       oneShot: true,
       historyWriteInterval: 10
@@ -200,11 +228,11 @@ describe('testing starting with entries in history file that are also in the sca
     expect(lines.length).to.equal(5)
 
     const expectedHistoryEntries = [
-      './test/testFiles/TestScannedDirectory/file1.ckl',
-      './test/testFiles/TestScannedDirectory/file2.ckl',
-      './test/testFiles/TestScannedDirectory/file3.ckl',
-      './test/testFiles/TestScannedDirectory/file4.ckl',
-      './test/testFiles/TestScannedDirectory/file5.ckl'
+      './test/testFiles/file1.ckl',
+      './test/testFiles/file2.ckl',
+      './test/testFiles/file3.ckl',
+      './test/testFiles/file4.ckl',
+      './test/testFiles/file5.ckl'
     ]
 
     for (const entry of expectedHistoryEntries) {
@@ -215,22 +243,34 @@ describe('testing starting with entries in history file that are also in the sca
 
 describe('testing starting with entries in history file that are NOT in the scanned directory', function () {
   const historyFile = './watcher.test.history'
-  const path = './test/testFiles/TestScannedDirectory'
+  const scannedPath = './test/testFiles/'
+  const fileContents = '<?xml version="1.0" encoding="UTF-8"?>'
 
   let logStub, warnStub
 
   beforeEach(function () {
     fs.writeFileSync(
       historyFile,
-      './test/testFiles/TestScannedDirectory/file55.ckl\n./test/testFiles/TestScannedDirectory/file22.ckl\n'
+      './test/testFiles//file55.ckl\n./test/testFiles//file22.ckl\n'
     )
+    setHistory(new Set())
+
+    fs.mkdirSync(scannedPath, { recursive: true })
+    for (let i = 1; i <= 5; i++) {
+      fs.writeFileSync(path.join(scannedPath, `file${i}.ckl`), fileContents)
+    }
+
     logStub = sinon.stub(logger, 'info')
     warnStub = sinon.stub(logger, 'warn')
-    setHistory(new Set())
   })
 
   afterEach(function () {
     fs.unlinkSync(historyFile)
+    const files = fs.readdirSync(scannedPath)
+    for (const file of files) {
+      fs.unlinkSync(path.join(scannedPath, file))
+    }
+    fs.rmSync(scannedPath, { recursive: true })
     logStub.restore()
     warnStub.restore()
   })
@@ -238,7 +278,7 @@ describe('testing starting with entries in history file that are NOT in the scan
   it('should correctly remove the 2 files history file then write the 5 in the scanned directory.', async function () {
     const options = {
       historyFile: historyFile,
-      path: path,
+      path: scannedPath,
       scanInterval: 5000,
       oneShot: true,
       historyWriteInterval: 10
@@ -261,11 +301,11 @@ describe('testing starting with entries in history file that are NOT in the scan
     expect(lines.length).to.equal(5)
 
     const expectedHistoryEntries = [
-      './test/testFiles/TestScannedDirectory/file1.ckl',
-      './test/testFiles/TestScannedDirectory/file2.ckl',
-      './test/testFiles/TestScannedDirectory/file3.ckl',
-      './test/testFiles/TestScannedDirectory/file4.ckl',
-      './test/testFiles/TestScannedDirectory/file5.ckl'
+      './test/testFiles/file1.ckl',
+      './test/testFiles/file2.ckl',
+      './test/testFiles/file3.ckl',
+      './test/testFiles/file4.ckl',
+      './test/testFiles/file5.ckl'
     ]
 
     for (const entry of expectedHistoryEntries) {
@@ -276,7 +316,8 @@ describe('testing starting with entries in history file that are NOT in the scan
 
 describe('testing starting with entries in history file that are not in the scanned directory and files that are in the scanned directory', function () {
   const historyFile = './watcher.test.history'
-  const path = './test/testFiles/TestScannedDirectory'
+  const scannedPath = './test/testFiles/'
+  const fileContents = '<?xml version="1.0" encoding="UTF-8"?>'
 
   let logStub, warnStub
 
@@ -285,13 +326,24 @@ describe('testing starting with entries in history file that are not in the scan
       historyFile,
       './test/testFiles/TestScannedDirectory/file55.ckl\n./test/testFiles/TestScannedDirectory/file22.ckl\n\n./test/testFiles/TestScannedDirectory/file1.ckl\n./test/testFiles/TestScannedDirectory/file2.ckl\n'
     )
+    setHistory(new Set())
+
+    fs.mkdirSync(scannedPath, { recursive: true })
+    for (let i = 1; i <= 5; i++) {
+      fs.writeFileSync(path.join(scannedPath, `file${i}.ckl`), fileContents)
+    }
+
     logStub = sinon.stub(logger, 'info')
     warnStub = sinon.stub(logger, 'warn')
-    setHistory(new Set())
   })
 
   afterEach(function () {
     fs.unlinkSync(historyFile)
+    const files = fs.readdirSync(scannedPath)
+    for (const file of files) {
+      fs.unlinkSync(path.join(scannedPath, file))
+    }
+    fs.rmSync(scannedPath, { recursive: true })
     logStub.restore()
     warnStub.restore()
   })
@@ -299,7 +351,7 @@ describe('testing starting with entries in history file that are not in the scan
   it('should correctly remove the 2 files history file skip 2 files already in the history file and scanned directory and add one file to the history file', async function () {
     const options = {
       historyFile: historyFile,
-      path: path,
+      path: scannedPath,
       scanInterval: 5000,
       oneShot: true,
       historyWriteInterval: 50
@@ -322,11 +374,11 @@ describe('testing starting with entries in history file that are not in the scan
     expect(lines.length).to.equal(5)
 
     const expectedHistoryEntries = [
-      './test/testFiles/TestScannedDirectory/file1.ckl',
-      './test/testFiles/TestScannedDirectory/file2.ckl',
-      './test/testFiles/TestScannedDirectory/file3.ckl',
-      './test/testFiles/TestScannedDirectory/file4.ckl',
-      './test/testFiles/TestScannedDirectory/file5.ckl'
+      './test/testFiles/file1.ckl',
+      './test/testFiles/file2.ckl',
+      './test/testFiles/file3.ckl',
+      './test/testFiles/file4.ckl',
+      './test/testFiles/file5.ckl'
     ]
 
     for (const entry of expectedHistoryEntries) {
@@ -338,8 +390,7 @@ describe('testing starting with entries in history file that are not in the scan
 describe('testing starting with empty history file and slowly adding and removing items to history manually', function () {
   this.timeout(5000)
   const historyFile = './watcher.test.history'
-  const path = './test/testFiles/TestScannedDirectory'
-
+  const scannedPath = './test/testFiles/'
   let logStub, warnStub
 
   beforeEach(function () {
@@ -358,7 +409,7 @@ describe('testing starting with empty history file and slowly adding and removin
   it('should correctly remove the 2 files history file skip 2 files already in the history file and scanned directory and add one file to the history file', async function () {
     const options = {
       historyFile: historyFile,
-      path: path,
+      path: scannedPath,
       scanInterval: 5000,
       oneShot: true,
       historyWriteInterval: 50
@@ -367,8 +418,8 @@ describe('testing starting with empty history file and slowly adding and removin
     // create history file
     initHistory(options)
 
-    addToHistory('./test/testFiles/TestScannedDirectory/file1.ckl')
-    addToHistory('./test/testFiles/TestScannedDirectory/file2.ckl')
+    addToHistory('./test/testFiles/file1.ckl')
+    addToHistory('./test/testFiles/file2.ckl')
 
     await new Promise(resolve =>
       setTimeout(resolve, options.historyWriteInterval)
@@ -379,10 +430,10 @@ describe('testing starting with empty history file and slowly adding and removin
     const lines = data.split('\n').filter(line => line.trim() !== '')
 
     expect(lines.length).to.equal(2)
-    expect(lines).to.include('./test/testFiles/TestScannedDirectory/file1.ckl')
-    expect(lines).to.include('./test/testFiles/TestScannedDirectory/file2.ckl')
+    expect(lines).to.include('./test/testFiles/file1.ckl')
+    expect(lines).to.include('./test/testFiles/file2.ckl')
 
-    removeFromHistory('./test/testFiles/TestScannedDirectory/file1.ckl')
+    removeFromHistory('./test/testFiles/file1.ckl')
 
     await new Promise(resolve =>
       setTimeout(resolve, options.historyWriteInterval)
@@ -393,13 +444,13 @@ describe('testing starting with empty history file and slowly adding and removin
     const lines2 = data2.split('\n').filter(line => line.trim() !== '')
 
     expect(lines2.length).to.equal(1)
-    expect(lines2).to.include('./test/testFiles/TestScannedDirectory/file2.ckl')
+    expect(lines2).to.include('./test/testFiles/file2.ckl')
   })
 })
 
 describe('testing no history file mode', function () {
   const historyFile = null
-  const path = './test/testFiles/TestScannedDirectory'
+  const scannedPath = './test/testFiles/'
 
   let logStub, warnStub
 
@@ -417,7 +468,7 @@ describe('testing no history file mode', function () {
   it('should correctly run in no history file mode', async function () {
     const options = {
       historyFile: historyFile,
-      path: path,
+      path: scannedPath,
       scanInterval: 5000,
       oneShot: true,
       historyWriteInterval: 10
@@ -425,7 +476,7 @@ describe('testing no history file mode', function () {
 
     initHistory(options)
 
-    const file = './test/testFiles/TestScannedDirectory/file1.ckl'
+    const file = './test/testFiles/file1.ckl'
 
     addToHistory(file)
 
@@ -444,7 +495,7 @@ describe('cleaning up', function () {
       process.exit(0); // Delayed exit to allow Mocha to output results
     }, 1000); // Adjust time as necessary for your environment
   });
-  
+
   it('should clean up the history file', function () {
     const historyFilePath = './watcher.test.history'
     // Check if the file exists and delete it
