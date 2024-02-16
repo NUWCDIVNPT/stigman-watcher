@@ -1,7 +1,8 @@
 import { expect } from 'chai'
 import sinon from 'sinon'
 import fs from 'fs'
-import startScanner, {
+import {
+  startScanner,
   initHistory,
   addToHistory,
   removeFromHistory,
