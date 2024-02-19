@@ -6,6 +6,10 @@
   "bin": {
     "stigman-watcher": "index.js"
   },
+  "scripts": {
+    "test": "c8 --reporter=html --reporter=text mocha  './test/**/*.test.js'",
+    "test:watch": "nodemon --ext 'js' --exec 'npm test'"
+  },
   "type": "module",
   "author": "carl.a.smigielski@saic.com",
   "license": "MIT",
@@ -35,6 +39,11 @@
     "winston": "^3.3.3"
   },
   "devDependencies": {
-    "esbuild": "^0.20.0"
+    "c8": "^9.1.0",
+    "chai": "^5.0.3",
+    "esbuild": "^0.20.0",
+    "mocha": "^10.2.0",
+    "nodemon": "^3.0.3",
+    "sinon": "^17.0.1"
   }
 }
