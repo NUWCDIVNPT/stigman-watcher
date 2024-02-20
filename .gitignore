@@ -5,3 +5,4 @@ watched/
 *.log
 log.json
 bundle.js
+coverage/
