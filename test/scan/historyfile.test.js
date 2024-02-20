@@ -66,13 +66,13 @@ describe('testing add/remove/init functions  ', function () {
   })
 
   it('should correctly remove from history file', async function () {
-    const options = {
+    setOptions({
       historyFile: historyFile,
       path: scannedPath,
       scanInterval: 5000,
       oneShot: true,
       historyWriteInterval: 10
-    }
+    })
 
     initHistory(options)
 
