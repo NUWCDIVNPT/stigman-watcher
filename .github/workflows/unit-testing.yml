@@ -1,0 +1,71 @@
+name: Run Unit Tests and Upload Coverage Artifact
+on:
+  workflow_dispatch:
+  push:
+    branches:
+        - main
+    paths:
+        - "lib/**"
+        - "index.js"
+        - "test/**"
+  pull_request:
+    branches:
+        - main
+    paths:
+        - "lib/**"
+        - "index.js"
+        - "test/**"
+
+jobs:
+  build_test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Setup Node.js 
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+    - name: Install app dependencies
+      run: npm ci
+    - name: Run tests
+      run: npm test
+    - name: Upload coverage to github
+      uses: actions/upload-artifact@v3
+      if: ${{ always() }}
+      with:
+        name: coverage
+        path: coverage
+
+         
+
+
+  #NOTE: this is for future useage 
+   
+  # SonarCloudAnalysis-Watcher:
+  #   name: SonarCloud Analysis Watcher
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v3
+  #       with:
+  #         fetch-depth: 0 # Important to fetch all history for accurate blame information
+  #     - name: Analyze Watcher with SonarCloud
+  #       uses: SonarSource/sonarcloud-github-action@v2.0.2
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information
+  #         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_WATCHER }} # Needed to push to SonarCloud
+  #       with:
+  #         # Additional arguments for the sonarcloud scanner
+  #         args: -Dsonar.projectKey=NUWCDIVNPT_stigman-watcher
+  #           -Dsonar.projectName=NUWCDIVNPT_stigman-watcher
+  #           -Dsonar.organization=nuwcdivnpt
+  #           -Dsonar.inclusions=**/*.js
+  #           -Dsonar.exclusions=**/node_modules/**, 
+            
+
+    #   This will fail the action if Quality Gate fails (leaving out for now )
+    #  - name: Check Quality Gate
+    #    uses: sonarsource/sonarqube-quality-gate-action@master
+    #    env:
+    #      SONAR_TOKEN:
