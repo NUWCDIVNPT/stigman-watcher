@@ -40,7 +40,7 @@ jobs:
             -Dsonar.projectName=NUWCDIVNPT_stigman-watcher
             -Dsonar.organization=nuwcdivnpt
             -Dsonar.inclusions=**/*.js
-            -Dsonar.exclusions=**/node_modules/**, **/coverage/**, **/test/**
+            -Dsonar.exclusions=**/node_modules/**, **/test/**
             
 
     #   This will fail the action if Quality Gate fails (leaving out for now )
