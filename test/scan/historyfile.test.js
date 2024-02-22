@@ -5,14 +5,10 @@ import { logger } from '../../lib/logger.js'
 import path from 'path'
 import { options } from '../../lib/args.js'
 
-logger.info = () => {}
-logger.warn = () => {}
-logger.error = () => {}
-logger.verbose = () => {}
-logger.debug = () => {}
-logger.silly = () => {}
-logger.http = () => {}
-
+const emptyFn = () => undefined
+for (const method of  ['info', 'warn', 'error', 'verbose', 'debug', 'silly', 'http']) {
+  logger[method] = emptyFn
+}
 
 function setOptions (o) {
   for (const [key, value] of Object.entries(o)) {
