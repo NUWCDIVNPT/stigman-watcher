@@ -28,6 +28,8 @@ jobs:
         node-version: 18
     - name: Install app dependencies
       run: npm ci
+    - name: Create .env file
+      run: echo -e "WATCHER_COLLECTION=1\nWATCHER_API_BASE=url\nWATCHER_AUTHORITY=auth\nWATCHER_CLIENT_ID=clientId\nWATCHER_CLIENT_SECRET=secret" > .env
     - name: Run tests
       run: npm test
     - name: Upload coverage to github
