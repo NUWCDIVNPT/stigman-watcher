@@ -1,0 +1,69 @@
+name: Build Binary Artifacts
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - build-workflow
+    paths:
+      - 'lib/**'
+      - 'index.js'
+      - 'build.sh'
+      - '.github/workflows/build-binary-artifacts.yml'
+jobs:
+  build-binary-artifacts-and-sign:
+    name: Build binary artifacts, sign, export
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Script Dependencies
+        id: install_script_dependencies
+        run: npm install -g pkg
+
+      - name: Check out the repo
+        uses: actions/checkout@v3
+        with:
+          ref: build-workflow
+          fetch-depth: 0
+
+      - name: Import GPG Key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@111c56156bcc6918c056dbef52164cfa583dc549
+        with:
+          gpg_private_key: ${{ secrets.WATCHER_PRIVATE_KEY }}
+
+      - name: run build script and sign
+        id: run_build_script_and_sign
+        run: ./build.sh --sign
+        continue-on-error: false
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: binary-artifacts
+          path: |
+            ./dist/
+          if-no-files-found: error
+
+      - name: Import GPG Public Key
+        id: import_gpg_public
+        if: steps.run_build_script_and_sign.outcome == 'success'
+        run: gpg --import ./nuwcdivnpt-bot.gpg.asc
+        
+      - name: Get version from package.json
+        id: package_version
+        if: steps.run_build_script_and_sign.outcome == 'success'
+        run: echo "PACKAGE_VERSION=$(jq -r '.version' package.json)" >> $GITHUB_ENV
+
+      - name: Verify Signatures
+        id: verify_signatures
+        if: steps.run_build_script_and_sign.outcome == 'success'
+        working-directory: ./dist
+        run: |
+          if ! gpg --verify stigman-watcher-linux-${{ env.PACKAGE_VERSION }}.tar.gz.asc stigman-watcher-linux-${{ env.PACKAGE_VERSION }}.tar.gz; then
+            echo "::warning ::Signature verification for Linux failed"
+          fi
+          if ! gpg --verify stigman-watcher-win-${{ env.PACKAGE_VERSION }}.zip.asc stigman-watcher-win-${{ env.PACKAGE_VERSION }}.zip; then
+            echo "::warning ::Signature verification for Windows failed"
+          fi
+      
+    

@@ -8,7 +8,6 @@
 # - tar
 # - gpg, if you wish to produce detached signatures
 
-keyring=stig-manager.gpg 
 signing_key="nuwcdivnpt-bot@users.noreply.github.com"
 
 bin_dir=./bin
@@ -43,11 +42,11 @@ pkg -C gzip --public --public-packages=* --no-bytecode pkg.config.json
 windows_archive=$dist_dir/stigman-watcher-win-$version.zip
 printf "\n[BUILD_TASK] Creating $windows_archive\n"
 zip --junk-paths $windows_archive ./dotenv-example $bin_dir/stigman-watcher-win.exe
-[[ $1 == "--sign" ]] && gpg --keyring $keyring --default-key $signing_key --armor --detach-sig  $windows_archive
+[[ $1 == "--sign" ]] && gpg --default-key $signing_key --armor --detach-sig  $windows_archive
 # Linux archive
 linux_archive=$dist_dir/stigman-watcher-linux-$version.tar.gz
 printf "\n[BUILD_TASK] Creating $linux_archive\n"
 tar -czvf $linux_archive --xform='s|^|stigman-watcher/|S' -C . dotenv-example -C $bin_dir stigman-watcher-linuxstatic
-[[ $1 == "--sign" ]] && gpg --keyring $keyring --default-key $signing_key --armor --detach-sig $linux_archive
+[[ $1 == "--sign" ]] && gpg --default-key $signing_key --armor --detach-sig $linux_archive
 
 printf "\n[BUILD_TASK] Done\n"
