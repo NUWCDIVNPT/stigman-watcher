@@ -1,0 +1,77 @@
+name: Build and Sign Binary Artifacts
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - build-workflow-pr
+    paths:
+      - "lib/**"
+      - "index.js"
+      - "build.sh"
+      - ".github/workflows/build-binary-artifacts.yml"
+jobs:
+  build-binary-artifacts-and-sign:
+    name: Build binary artifacts, sign, export
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+        with:
+          ref: build-workflow-pr
+          fetch-depth: 0
+
+      - name: Import GPG Key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@111c56156bcc6918c056dbef52164cfa583dc549
+        with:
+          gpg_private_key: ${{ secrets.WATCHER_PRIVATE_KEY }}
+
+      - name: run build script
+        id: run_build_script
+        run: ./build.sh
+
+      - name: Get version from package.json
+        id: package_version
+        run: echo "PACKAGE_VERSION=$(jq -r '.version' package.json)" >> $GITHUB_ENV
+
+      - name: Sign Artifacts
+        id: sign_artifacts
+        run: |
+         if ! gpg --default-key nuwcdivnpt-bot@users.noreply.github.com --armor --detach-sig ./dist/stigman-watcher-linux-${{ env.PACKAGE_VERSION }}.tar.gz; then
+            echo "::warning ::Linux Signing failed"
+            exit 1
+          fi
+         if ! gpg --default-key nuwcdivnpt-bot@users.noreply.github.com --armor --detach-sig ./dist/stigman-watcher-win-${{ env.PACKAGE_VERSION }}.zip; then
+            echo "::warning ::Windows Signing failed"
+            exit 1
+         fi
+      
+      - name: Import GPG Public Key
+        id: import_gpg_public
+        run: |
+          if ! gpg --import ./nuwcdivnpt-bot.gpg.asc; then
+            echo "::warning ::Public Key Import failed"
+            exit 1
+          fi
+    
+      - name: Verify Signatures
+        id: verify_signatures
+        working-directory: ./dist
+        run: |
+          if ! gpg --verify stigman-watcher-linux-${{ env.PACKAGE_VERSION }}.tar.gz.asc stigman-watcher-linux-${{ env.PACKAGE_VERSION }}.tar.gz; then
+            echo "::warning ::Signature verification for Linux failed"
+            exit 1
+          fi
+          if ! gpg --verify stigman-watcher-win-${{ env.PACKAGE_VERSION }}.zip.asc stigman-watcher-win-${{ env.PACKAGE_VERSION }}.zip; then
+            echo "::warning ::Signature verification for Windows failed"
+            exit 1
+          fi
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: binary-artifacts
+          path: |
+            ./dist/
+          if-no-files-found: error
