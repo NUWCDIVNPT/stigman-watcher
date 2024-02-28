@@ -4,11 +4,11 @@ on:
   push:
     branches:
       - main
-      - build-workflow-pr
     paths:
       - "lib/**"
       - "index.js"
       - "build.sh"
+      - "nuwcdivnpt-bot.gpg.asc"
       - ".github/workflows/build-binary-artifacts.yml"
 jobs:
   build-binary-artifacts-and-sign:
@@ -18,7 +18,7 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v3
         with:
-          ref: build-workflow-pr
+          ref: main
           fetch-depth: 0
 
       - name: Import GPG Key
