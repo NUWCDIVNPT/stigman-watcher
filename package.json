@@ -21,21 +21,19 @@
     "node": ">=14"
   },
   "dependencies": {
+    "@nuwcdivnpt/stig-manager-client-modules": "^1.4.1",
     "atob": "^2.1.2",
     "better-queue": "^3.8.10",
     "chokidar": "^3.5.1",
     "commander": "^7.2.0",
     "dotenv": "^8.2.0",
     "fast-glob": "^3.2.5",
-    "fast-xml-parser": "^4.0.7",
     "got": "^11.8.2",
-    "he": "^1.2.0",
     "jsonwebtoken": "^9.0.0",
     "n-readlines": "^1.0.1",
     "prompt-sync": "4.1.6",
     "semver": "^7.3.5",
     "serialize-error": "^8.0.1",
-    "stig-manager-client-modules": "github:nuwcdivnpt/stig-manager-client-modules",
     "winston": "^3.3.3"
   },
   "devDependencies": {
