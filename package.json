@@ -1,21 +1,20 @@
 {
   "name": "stigman-watcher",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "CLI that watches a path for STIG test result files on behalf of a STIG Manager Collection.",
   "main": "index.js",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nuwcdivnpt/stigman-watcher.git"
+  },
   "bin": {
     "stigman-watcher": "index.js"
   },
   "scripts": {
     "test": "c8 --reporter=html --reporter=text mocha  './test/**/*.test.js'",
     "test:watch": "nodemon --ext 'js' --exec 'npm test'"
-  },
-  "type": "module",
-  "author": "carl.a.smigielski@saic.com",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/nuwcdivnpt/stigman-watcher.git"
   },
   "engines": {
     "node": ">=14"
