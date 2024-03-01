@@ -6,7 +6,6 @@ on:
   push:
     branches:
       - main
-      - build-workflow-pr
     paths:
       - "lib/**"
       - "index.js"
@@ -21,7 +20,7 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v3
         with:
-          ref: build-workflow-pr
+          ref: main
           fetch-depth: 0
 
       - name: run build script
