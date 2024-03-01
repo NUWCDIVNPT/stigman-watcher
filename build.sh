@@ -6,7 +6,6 @@
 # - jq
 # - zip
 # - tar
-# - gpg, if you wish to produce detached signatures
 
 check_exit_status() {
   if [[ $? -eq 0 ]]; then

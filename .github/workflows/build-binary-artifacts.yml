@@ -1,9 +1,12 @@
 name: Build and Sign Binary Artifacts
 on:
+  release:
+    types: [published]
   workflow_dispatch:
   push:
     branches:
       - main
+      - build-workflow-pr
     paths:
       - "lib/**"
       - "index.js"
@@ -18,19 +21,21 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v3
         with:
-          ref: main
+          ref: build-workflow-pr
           fetch-depth: 0
-
-      - name: Import GPG Key
-        id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@111c56156bcc6918c056dbef52164cfa583dc549
-        with:
-          gpg_private_key: ${{ secrets.WATCHER_PRIVATE_KEY }}
 
       - name: run build script
         id: run_build_script
         run: ./build.sh
 
+      - name: Import GPG Key
+        id: import_gpg
+        run: | 
+          if ! echo "${{ secrets.WATCHER_PRIVATE_KEY }}" | gpg --import; then
+            echo "::warning ::Private key GPG Import failed"
+            exit 1
+          fi
+      
       - name: Get version from package.json
         id: package_version
         run: echo "PACKAGE_VERSION=$(jq -r '.version' package.json)" >> $GITHUB_ENV
@@ -47,14 +52,6 @@ jobs:
             exit 1
          fi
       
-      - name: Import GPG Public Key
-        id: import_gpg_public
-        run: |
-          if ! gpg --import ./nuwcdivnpt-bot.gpg.asc; then
-            echo "::warning ::Public Key Import failed"
-            exit 1
-          fi
-    
       - name: Verify Signatures
         id: verify_signatures
         working-directory: ./dist
@@ -70,6 +67,7 @@ jobs:
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
+        if: always() 
         with:
           name: binary-artifacts
           path: |
