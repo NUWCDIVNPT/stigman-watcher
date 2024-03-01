@@ -10,10 +10,18 @@ import startFsEventWatcher from './lib/events.js'
 import { getOpenIDConfiguration, getToken } from './lib/auth.js'
 import * as api from './lib/api.js'
 import { serializeError } from 'serialize-error'
-import startScanner from './lib/scan.js'
+import { initScanner } from './lib/scan.js'
 import semverGte from 'semver/functions/gte.js'
 
 const minApiVersion = '1.2.7'
+
+process.on('SIGINT', () => {
+  logger.info({
+    component: 'main',
+    message: 'received SIGINT, exiting'
+  })
+  process.exit(0)
+}) 
 
 run()
 
@@ -22,6 +30,7 @@ async function run() {
     logger.info({
       component: 'main',
       message: 'running',
+      pid: process.pid,
       options: getObfuscatedConfig(options)
     })
     
@@ -30,7 +39,7 @@ async function run() {
       startFsEventWatcher()
     }
     else if (options.mode === 'scan') {
-      startScanner()
+      initScanner()
     }
   }
   catch (e) {
