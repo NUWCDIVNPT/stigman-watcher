@@ -12,6 +12,7 @@ import * as api from './lib/api.js'
 import { serializeError } from 'serialize-error'
 import { initScanner } from './lib/scan.js'
 import semverGte from 'semver/functions/gte.js'
+import Alarm from './lib/alarm.js'
 
 const minApiVersion = '1.2.7'
 
@@ -21,9 +22,23 @@ process.on('SIGINT', () => {
     message: 'received SIGINT, exiting'
   })
   process.exit(0)
-}) 
+})
 
-run()
+Alarm.on('alarmRaised', (alarmType) => {
+  logger.error({
+    component: 'main',
+    message: `Alarm raised: ${alarmType}`
+  })
+})
+
+Alarm.on('alarmLowered', (alarmType) => {
+  logger.error({
+    component: 'main',
+    message: `Alarm lowered: ${alarmType}`
+  })
+})
+
+await run()
 
 async function run() {
   try {
