@@ -6,10 +6,15 @@
 # - jq
 # - zip
 # - tar
-# - gpg, if you wish to produce detached signatures
 
-keyring=stig-manager.gpg 
-signing_key="nuwcdivnpt-bot@users.noreply.github.com"
+check_exit_status() {
+  if [[ $? -eq 0 ]]; then
+    echo "[BUILD_TASK] $1 succeeded"
+  else
+    echo "[BUILD_TASK] $1 failed"
+    exit $2
+  fi
+}
 
 bin_dir=./bin
 dist_dir=./dist
@@ -28,26 +33,34 @@ rm -rf $dist_dir/*
 printf "[BUILD_TASK] Fetching node_modules\n"
 rm -rf ./node_modules
 npm ci
+npm install -g pkg
 
-# bundle
+# Bundle
+printf "[BUILD_TASK] Bundling\n"
 npx esbuild index.js --bundle --platform=node --outfile=bundle.js
+check_exit_status "Bundling" 1
 
 # version=$(git describe --tags | sed 's/\(.*\)-.*/\1/')
+#get version from package.json
 version=$(jq -r .version package.json)
+check_exit_status "Getting Version" 5
 printf "\n[BUILD_TASK] Using version string: $version\n"
 
 # Make binaries
 printf "\n[BUILD_TASK] Building binaries in $bin_dir\n"
 pkg -C gzip --public --public-packages=* --no-bytecode pkg.config.json
+check_exit_status "Building Binaries" 2
+
 # Windows archive
 windows_archive=$dist_dir/stigman-watcher-win-$version.zip
 printf "\n[BUILD_TASK] Creating $windows_archive\n"
 zip --junk-paths $windows_archive ./dotenv-example $bin_dir/stigman-watcher-win.exe
-[[ $1 == "--sign" ]] && gpg --keyring $keyring --default-key $signing_key --armor --detach-sig  $windows_archive
+check_exit_status "Zipping Windows Archive" 3
+
 # Linux archive
 linux_archive=$dist_dir/stigman-watcher-linux-$version.tar.gz
 printf "\n[BUILD_TASK] Creating $linux_archive\n"
 tar -czvf $linux_archive --xform='s|^|stigman-watcher/|S' -C . dotenv-example -C $bin_dir stigman-watcher-linuxstatic
-[[ $1 == "--sign" ]] && gpg --keyring $keyring --default-key $signing_key --armor --detach-sig $linux_archive
+check_exit_status "Tarring linux Archive" 4
 
 printf "\n[BUILD_TASK] Done\n"
