@@ -1,0 +1,40 @@
+name: Run Unit Tests and Upload Coverage Artifact
+on:
+  workflow_dispatch:
+  push:
+    branches:
+        - main
+    paths:
+        - "lib/**"
+        - "index.js"
+        - "test/**"
+  pull_request:
+    branches:
+        - main
+    paths:
+        - "lib/**"
+        - "index.js"
+        - "test/**"
+
+jobs:
+  build_test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Setup Node.js 
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+    - name: Install app dependencies
+      run: npm ci
+    - name: Create .env file
+      run: echo -e "WATCHER_COLLECTION=1\nWATCHER_API_BASE=url\nWATCHER_AUTHORITY=auth\nWATCHER_CLIENT_ID=clientId\nWATCHER_CLIENT_SECRET=secret" > .env
+    - name: Run tests
+      run: npm test
+    - name: Upload coverage to github
+      uses: actions/upload-artifact@v3
+      if: ${{ always() }}
+      with:
+        name: coverage
+        path: coverage

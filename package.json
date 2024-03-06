@@ -1,36 +1,45 @@
 {
-  "name": "stigman-watcher",
-  "version": "1.4.1",
+  "name": "@nuwcdivnpt/stigman-watcher",
+  "version": "1.4.2",
   "description": "CLI that watches a path for STIG test result files on behalf of a STIG Manager Collection.",
   "main": "index.js",
-  "bin": {
-    "stigman-watcher": "index.js"
-  },
-  "author": "carl.a.smigielski@saic.com",
+  "type": "module",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nuwcdivnpt/stigman-watcher.git"
+    "url": "https://github.com/NUWCDIVNPT/stigman-watcher.git"
+  },
+  "bin": {
+    "stigman-watcher": "index.js"
+  },
+  "scripts": {
+    "test": "c8 --reporter=html --reporter=text mocha  './test/**/*.test.js'",
+    "test:watch": "nodemon --ext 'js' --exec 'npm test'"
   },
   "engines": {
     "node": ">=14"
   },
   "dependencies": {
+    "@nuwcdivnpt/stig-manager-client-modules": "^1.4.1",
     "atob": "^2.1.2",
     "better-queue": "^3.8.10",
     "chokidar": "^3.5.1",
     "commander": "^7.2.0",
     "dotenv": "^8.2.0",
     "fast-glob": "^3.2.5",
-    "fast-xml-parser": "^4.0.7",
     "got": "^11.8.2",
-    "he": "^1.2.0",
     "jsonwebtoken": "^9.0.0",
     "n-readlines": "^1.0.1",
     "prompt-sync": "4.1.6",
     "semver": "^7.3.5",
     "serialize-error": "^8.0.1",
-    "stig-manager-client-modules": "github:nuwcdivnpt/stig-manager-client-modules#semver:^1.0.0",
     "winston": "^3.3.3"
+  },
+  "devDependencies": {
+    "c8": "^9.1.0",
+    "chai": "^5.0.3",
+    "esbuild": "^0.20.0",
+    "mocha": "^10.2.0",
+    "nodemon": "^3.0.3"
   }
 }

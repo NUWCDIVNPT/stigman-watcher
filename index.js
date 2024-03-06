@@ -1,16 +1,27 @@
 #!/usr/bin/env node
+import { logger, getSymbol } from './lib/logger.js'
+import { options, configValid }  from './lib/args.js'
+if (!configValid) {
+  logger.error({ component: 'main', message: 'invalid configuration... Exiting'})
+  logger.end()
+  process.exit(1)
+}
+import startFsEventWatcher from './lib/events.js'
+import { getOpenIDConfiguration, getToken } from './lib/auth.js'
+import * as api from './lib/api.js'
+import { serializeError } from 'serialize-error'
+import { initScanner } from './lib/scan.js'
+import semverGte from 'semver/functions/gte.js'
 
 const minApiVersion = '1.2.7'
 
-const { logger, getSymbol } = require('./lib/logger')
-const config = require('./lib/args')
-if (!config) {
-  logger.end()
-  return
-}
-const auth = require('./lib/auth')
-const api = require('./lib/api')
-const {serializeError} = require('serialize-error')
+process.on('SIGINT', () => {
+  logger.info({
+    component: 'main',
+    message: 'received SIGINT, exiting'
+  })
+  process.exit(0)
+}) 
 
 run()
 
@@ -19,22 +30,21 @@ async function run() {
     logger.info({
       component: 'main',
       message: 'running',
-      config: getObfuscatedConfig(config)
+      pid: process.pid,
+      options: getObfuscatedConfig(options)
     })
     
     await preflightServices()
-    if (config.mode === 'events') {
-      const watcher = require('./lib/events')
-      watcher.startFsEventWatcher()
+    if (options.mode === 'events') {
+      startFsEventWatcher()
     }
-    else if (config.mode === 'scan') {
-      const scanner = require('./lib/scan')
-      scanner.startScanner()
+    else if (options.mode === 'scan') {
+      initScanner()
     }
   }
   catch (e) {
     logError(e)
-    await logger.end()
+    logger.end()
   }
 }
 
@@ -63,25 +73,24 @@ function logError(e) {
 }
 
 async function hasMinApiVersion () {
-  const semverGte = require('semver/functions/gte')
   const [remoteApiVersion] = await api.getDefinition('$.info.version')
   logger.info({ component: 'main', message: `preflight API version`, minApiVersion, remoteApiVersion})
   if (semverGte(remoteApiVersion, minApiVersion)) {
     return true
   }
   else {
-    throw( `Remote API version ${remoteApiVersion} is not compatible with this release.` )
+    throw new Error(`Remote API version ${remoteApiVersion} is not compatible with this release.`)
   }
 }
 
 async function preflightServices () {
   await hasMinApiVersion()
-  await auth.getOpenIDConfiguration()
-  await auth.getToken()
+  await getOpenIDConfiguration()
+  await getToken()
   logger.info({ component: 'main', message: `preflight token request suceeded`})
   const promises = [
-    api.getCollection(config.collectionId),
-    api.getCollectionAssets(config.collectionId),
+    api.getCollection(options.collectionId),
+    api.getCollectionAssets(options.collectionId),
     api.getInstalledStigs(),
     api.getScapBenchmarkMap()
   ]
@@ -100,8 +109,8 @@ async function preflightServices () {
   logger.info({ component: 'main', message: `prefilght api requests suceeded`})
 }
 
-function getObfuscatedConfig (config) {
-  const securedConfig = {...config}
+function getObfuscatedConfig (options) {
+  const securedConfig = {...options}
   if (securedConfig.clientSecret) {
     securedConfig.clientSecret = '[hidden]'
   }
@@ -119,7 +128,7 @@ async function refreshUser() {
 
 async function refreshCollection() {
   try {
-    await api.getCollection(config.collectionId)
+    await api.getCollection(options.collectionId)
   }
   catch (e) {
     logError(e)
