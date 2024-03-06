@@ -3,7 +3,7 @@
 </p>
 <h1 align="center"> STIG Manager Watcher </h1>
 
-<a href="https://npmjs.org/package/stigman-watcher"><img src="https://img.shields.io/npm/v/stigman-watcher"></a>
+<a href="https://www.npmjs.com/package/@nuwcdivnpt/stigman-watcher"><img src="https://img.shields.io/npm/v/@nuwcdivnpt/stigman-watcher"></a>
 
 A [STIG Manager](https://github.com/nuwcdivnpt/stig-manager) CLI client that watches a path for test result files formatted as CKL or XCCDF and posts the results to a Collection.
 
@@ -28,7 +28,7 @@ C:/> stigman-watcher-win.exe [options]
 ``` 
 ### Install globally via NPM and run the module 
 ```
-$ npm install --global stigman-watcher
+$ npm install --global @nuwcdivnpt/stigman-watcher
 $ stigman-watcher [options]
 ```
 
