@@ -4,7 +4,6 @@ on:
   push:
     branches:
         - main
-        - update-actions-versions
     paths:
         - "lib/**"
         - "index.js"
