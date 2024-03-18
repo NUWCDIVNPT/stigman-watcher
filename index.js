@@ -26,7 +26,7 @@ process.on('SIGINT', () => {
 })
 
 Alarm.on('shutdown', (exitCode) => {
-  logger.info({
+  logger.error({
     component: 'main',
     message: `received shutdown event with code ${exitCode}, exiting`
   })
@@ -41,7 +41,7 @@ Alarm.on('alarmRaised', (alarmType) => {
 })
 
 Alarm.on('alarmLowered', (alarmType) => {
-  logger.error({
+  logger.info({
     component: 'main',
     message: `Alarm lowered: ${alarmType}`
   })
@@ -133,7 +133,7 @@ async function preflightServices () {
     api.getScapBenchmarkMap()
   ]
   await Promise.all(promises)
-  setInterval(refreshCollection, 10 * 60000)
+  setInterval(refreshCollection, 1 * 60000)
   
   // OAuth scope 'stig-manager:user:read' was not required for early versions of Watcher
   // For now, fail gracefully if we are blocked from calling /user
@@ -143,6 +143,7 @@ async function preflightServices () {
   }
   catch (e) {
     logger.warn({ component: 'main', message: `preflight user request failed; token may be missing scope 'stig-manager:user:read'? Watcher will not set {"status": "accepted"}`})
+    Alarm.noGrant(false)
   }
   logger.info({ component: 'main', message: `prefilght api requests suceeded`})
 }
@@ -157,6 +158,7 @@ function getObfuscatedConfig (options) {
 
 async function refreshUser() {
   try {
+    if (Alarm.isAlarmed()) return
     await api.getUser()
   }
   catch (e) {
@@ -166,6 +168,7 @@ async function refreshUser() {
 
 async function refreshCollection() {
   try {
+    if (Alarm.isAlarmed()) return
     await api.getCollection(options.collectionId)
   }
   catch (e) {
