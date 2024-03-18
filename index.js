@@ -7,12 +7,13 @@ if (!configValid) {
   process.exit(1)
 }
 import startFsEventWatcher from './lib/events.js'
-import { getOpenIDConfiguration, getToken } from './lib/auth.js'
+import * as auth from './lib/auth.js'
 import * as api from './lib/api.js'
 import { serializeError } from 'serialize-error'
 import { initScanner } from './lib/scan.js'
 import semverGte from 'semver/functions/gte.js'
 import Alarm from './lib/alarm.js'
+import * as CONSTANTS from './lib/consts.js'
 
 const minApiVersion = '1.2.7'
 
@@ -22,6 +23,14 @@ process.on('SIGINT', () => {
     message: 'received SIGINT, exiting'
   })
   process.exit(0)
+})
+
+Alarm.on('shutdown', (exitCode) => {
+  logger.info({
+    component: 'main',
+    message: `received shutdown event with code ${exitCode}, exiting`
+  })
+  process.exit(exitCode)
 })
 
 Alarm.on('alarmRaised', (alarmType) => {
@@ -50,6 +59,7 @@ async function run() {
     })
     
     await preflightServices()
+    setupAlarmHandlers()
     if (options.mode === 'events') {
       startFsEventWatcher()
     }
@@ -60,7 +70,20 @@ async function run() {
   catch (e) {
     logError(e)
     logger.end()
+    process.exitCode = CONSTANTS.ERR_FAILINIT
   }
+}
+
+function setupAlarmHandlers() {
+  const alarmHandlers = {
+    apiOffline: api.offlineRetryHandler,
+    authOffline: auth.offlineRetryHandler,
+    noGrant: () => Alarm.shutdown(CONSTANTS.ERR_NOGRANT),
+    noToken: () => Alarm.shutdown(CONSTANTS.ERR_NOTOKEN)
+  }
+  Alarm.on('alarmRaised', (alarmType) => {
+    alarmHandlers[alarmType]?.()
+  })
 }
 
 function logError(e) {
@@ -100,8 +123,8 @@ async function hasMinApiVersion () {
 
 async function preflightServices () {
   await hasMinApiVersion()
-  await getOpenIDConfiguration()
-  await getToken()
+  await auth.getOpenIDConfiguration()
+  await auth.getToken()
   logger.info({ component: 'main', message: `preflight token request suceeded`})
   const promises = [
     api.getCollection(options.collectionId),
