@@ -2,7 +2,7 @@
 import { logger, getSymbol } from './lib/logger.js'
 import { options, configValid }  from './lib/args.js'
 if (!configValid) {
-  logger.error({ component: 'main', message: 'invalid configuration... Exiting'})
+  logger.error({ component, message: 'invalid configuration... Exiting'})
   logger.end()
   process.exit(1)
 }
@@ -16,10 +16,11 @@ import Alarm from './lib/alarm.js'
 import * as CONSTANTS from './lib/consts.js'
 
 const minApiVersion = '1.2.7'
+const component = 'index'
 
 process.on('SIGINT', () => {
   logger.info({
-    component: 'main',
+    component,
     message: 'received SIGINT, exiting'
   })
   process.exit(0)
@@ -27,7 +28,7 @@ process.on('SIGINT', () => {
 
 Alarm.on('shutdown', (exitCode) => {
   logger.error({
-    component: 'main',
+    component,
     message: `received shutdown event with code ${exitCode}, exiting`
   })
   process.exit(exitCode)
@@ -35,14 +36,14 @@ Alarm.on('shutdown', (exitCode) => {
 
 Alarm.on('alarmRaised', (alarmType) => {
   logger.error({
-    component: 'main',
+    component,
     message: `Alarm raised: ${alarmType}`
   })
 })
 
 Alarm.on('alarmLowered', (alarmType) => {
   logger.info({
-    component: 'main',
+    component,
     message: `Alarm lowered: ${alarmType}`
   })
 })
@@ -52,7 +53,7 @@ await run()
 async function run() {
   try {
     logger.info({
-      component: 'main',
+      component,
       message: 'running',
       pid: process.pid,
       options: getObfuscatedConfig(options)
@@ -88,7 +89,7 @@ function setupAlarmHandlers() {
 
 function logError(e) {
   const errorObj = {
-    component: e.component || 'main',
+    component: e.component || 'index',
     message: e.message,
   }
   if (e.request) {
@@ -112,7 +113,7 @@ function logError(e) {
 
 async function hasMinApiVersion () {
   const [remoteApiVersion] = await api.getDefinition('$.info.version')
-  logger.info({ component: 'main', message: `preflight API version`, minApiVersion, remoteApiVersion})
+  logger.info({ component, message: `preflight API version`, minApiVersion, remoteApiVersion})
   if (semverGte(remoteApiVersion, minApiVersion)) {
     return true
   }
@@ -125,7 +126,7 @@ async function preflightServices () {
   await hasMinApiVersion()
   await auth.getOpenIDConfiguration()
   await auth.getToken()
-  logger.info({ component: 'main', message: `preflight token request suceeded`})
+  logger.info({ component, message: `preflight token request suceeded`})
   const promises = [
     api.getCollection(options.collectionId),
     api.getCollectionAssets(options.collectionId),
@@ -142,10 +143,10 @@ async function preflightServices () {
     setInterval(refreshUser, 10 * 60000)
   }
   catch (e) {
-    logger.warn({ component: 'main', message: `preflight user request failed; token may be missing scope 'stig-manager:user:read'? Watcher will not set {"status": "accepted"}`})
+    logger.warn({ component, message: `preflight user request failed; token may be missing scope 'stig-manager:user:read'? Watcher will not set {"status": "accepted"}`})
     Alarm.noGrant(false)
   }
-  logger.info({ component: 'main', message: `prefilght api requests suceeded`})
+  logger.info({ component, message: `prefilght api requests suceeded`})
 }
 
 function getObfuscatedConfig (options) {
@@ -159,6 +160,10 @@ function getObfuscatedConfig (options) {
 async function refreshUser() {
   try {
     if (Alarm.isAlarmed()) return
+    logger.info({
+      component,
+      message: 'refreshing user cache'
+    })
     await api.getUser()
   }
   catch (e) {
@@ -169,6 +174,10 @@ async function refreshUser() {
 async function refreshCollection() {
   try {
     if (Alarm.isAlarmed()) return
+    logger.info({
+      component,
+      message: 'refreshing collection cache'
+    })
     await api.getCollection(options.collectionId)
   }
   catch (e) {
