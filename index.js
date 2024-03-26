@@ -134,7 +134,7 @@ async function preflightServices () {
     api.getScapBenchmarkMap()
   ]
   await Promise.all(promises)
-  setInterval(refreshCollection, 1 * 60000) // todo: change back to 10
+  setInterval(refreshCollection, 10 * 60000)
   
   // OAuth scope 'stig-manager:user:read' was not required for early versions of Watcher
   // For now, fail gracefully if we are blocked from calling /user
