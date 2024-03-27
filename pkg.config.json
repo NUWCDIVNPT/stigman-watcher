@@ -1,9 +1,9 @@
 {
     "name": "stigman-watcher",
-    "bin": "./bundle.js",
+    "bin": "./bundle.cjs",
     "pkg": {
         "targets": [ "node18-win", "node18-linuxstatic" ],
-        "assets": ["./node_modules/better-queue-memory/**"],
+        "assets": ["./node_modules/better-queue-memory/**", "./package.json"],
         "outputPath": "./bin"
     }
 }

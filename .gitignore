@@ -4,5 +4,5 @@ watched/
 .env
 *.log
 log.json
-bundle.js
+bundle.cjs
 coverage/
