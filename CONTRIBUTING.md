@@ -1,6 +1,6 @@
 # Contributing to STIGMAN-Watcher
 
-**NOTE: This CONTRIBUTING.md describes our software contribution policy. You do not need to follow the Developer's Certificate of Origin (DCO) process for commenting on the STIG Manager repository documentation, such as CONTRIBUTING.md, INTENT.md, etc. or for submitting issues. For more information about developing and contributing to the project, please see the [STIG Manager Contribution Guide](https://stig-manager.readthedocs.io/en/latest/the-project/contributing.html) that is part of our [overall documentation](https://stig-manager.readthedocs.io/en/latest/index.html)**
+**NOTE: This CONTRIBUTING.md describes our software contribution policy. You do not need to follow the Developer's Certificate of Origin (DCO) process for commenting on the STIGMAN-Watcher repository documentation, such as CONTRIBUTING.md, INTENT.md, etc. or for submitting issues. For more information about developing and contributing to the project, please see the [STIG Manager Contribution Guide](https://stig-manager.readthedocs.io/en/latest/the-project/contributing.html) that is part of our [overall documentation](https://stig-manager.readthedocs.io/en/latest/index.html)**
 
 ## Policy
 
