@@ -37,7 +37,7 @@ npm install -g pkg
 
 # Bundle
 printf "[BUILD_TASK] Bundling\n"
-npx esbuild index.js --bundle --platform=node --outfile=bundle.js
+npx esbuild index.js --bundle --platform=node --outfile=bundle.cjs
 check_exit_status "Bundling" 1
 
 # version=$(git describe --tags | sed 's/\(.*\)-.*/\1/')
