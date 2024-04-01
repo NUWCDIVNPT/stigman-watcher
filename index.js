@@ -48,7 +48,7 @@ Alarm.on('alarmLowered', (alarmType) => {
   })
 })
 
-await run()
+run()
 
 async function run() {
   try {
