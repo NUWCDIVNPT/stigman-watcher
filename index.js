@@ -129,7 +129,6 @@ async function preflightServices () {
   logger.info({ component, message: `preflight token request suceeded`})
   const promises = [
     api.getCollection(options.collectionId),
-    api.getCollectionAssets(options.collectionId),
     api.getInstalledStigs(),
     api.getScapBenchmarkMap()
   ]
