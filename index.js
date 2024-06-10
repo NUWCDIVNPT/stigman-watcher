@@ -127,7 +127,7 @@ async function preflightServices () {
   await hasMinApiVersion()
   await auth.getOpenIDConfiguration()
   await auth.getToken()
-  logger.info({ component, message: `preflight token request suceeded`})
+  logger.info({ component, message: `preflight token request succeeded`})
   const promises = [
     api.getCollection(options.collectionId),
     api.getCollectionAssets(options.collectionId),
@@ -147,7 +147,7 @@ async function preflightServices () {
     logger.warn({ component, message: `preflight user request failed; token may be missing scope 'stig-manager:user:read'? Watcher will not set {"status": "accepted"}`})
     Alarm.noGrant(false)
   }
-  logger.info({ component, message: `prefilght api requests suceeded`})
+  logger.info({ component, message: `preflight api requests succeeded`})
 }
 
 function getObfuscatedConfig (options) {
