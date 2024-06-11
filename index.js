@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import { logger, getSymbol } from './lib/logger.js'
 import { options, configValid }  from './lib/args.js'
-const minApiVersion = '1.2.7'
+import * as CONSTANTS from './lib/consts.js'
+const minApiVersion = CONSTANTS.MIN_API_VERSION
 const component = 'index'
 if (!configValid) {
   logger.error({ component, message: 'invalid configuration... Exiting'})
@@ -15,7 +16,6 @@ import { serializeError } from 'serialize-error'
 import { initScanner } from './lib/scan.js'
 import semverGte from 'semver/functions/gte.js'
 import Alarm from './lib/alarm.js'
-import * as CONSTANTS from './lib/consts.js'
 
 
 
