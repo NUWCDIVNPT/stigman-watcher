@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 import { logger, getSymbol } from './lib/logger.js'
 import { options, configValid }  from './lib/args.js'
+import * as CONSTANTS from './lib/consts.js'
+const minApiVersion = CONSTANTS.MIN_API_VERSION
+const component = 'index'
 if (!configValid) {
   logger.error({ component, message: 'invalid configuration... Exiting'})
   logger.end()
@@ -13,10 +16,8 @@ import { serializeError } from 'serialize-error'
 import { initScanner } from './lib/scan.js'
 import semverGte from 'semver/functions/gte.js'
 import Alarm from './lib/alarm.js'
-import * as CONSTANTS from './lib/consts.js'
 
-const minApiVersion = '1.2.7'
-const component = 'index'
+
 
 process.on('SIGINT', () => {
   logger.info({
@@ -126,7 +127,7 @@ async function preflightServices () {
   await hasMinApiVersion()
   await auth.getOpenIDConfiguration()
   await auth.getToken()
-  logger.info({ component, message: `preflight token request suceeded`})
+  logger.info({ component, message: `preflight token request succeeded`})
   const promises = [
     api.getCollection(options.collectionId),
     api.getInstalledStigs(),
@@ -145,7 +146,7 @@ async function preflightServices () {
     logger.warn({ component, message: `preflight user request failed; token may be missing scope 'stig-manager:user:read'? Watcher will not set {"status": "accepted"}`})
     Alarm.noGrant(false)
   }
-  logger.info({ component, message: `prefilght api requests suceeded`})
+  logger.info({ component, message: `preflight api requests succeeded`})
 }
 
 function getObfuscatedConfig (options) {
