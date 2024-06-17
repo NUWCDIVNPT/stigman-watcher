@@ -1,6 +1,6 @@
 {
   "name": "@nuwcdivnpt/stigman-watcher",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "description": "CLI that watches a path for STIG test result files on behalf of a STIG Manager Collection.",
   "main": "index.js",
   "type": "module",
