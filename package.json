@@ -20,7 +20,7 @@
     "node": ">=14"
   },
   "dependencies": {
-    "@nuwcdivnpt/stig-manager-client-modules": "^1.5.3",
+    "@nuwcdivnpt/stig-manager-client-modules": "^1.5.4",
     "atob": "^2.1.2",
     "better-queue": "^3.8.10",
     "chokidar": "^3.5.1",
