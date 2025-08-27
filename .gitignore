@@ -6,3 +6,5 @@ watched/
 log.json
 bundle.cjs
 coverage/
+history/*.json
+logs/*.log

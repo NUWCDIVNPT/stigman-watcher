@@ -1,0 +1,41 @@
+services:
+  stigman-watcher:
+    build: .
+    container_name: stigman-watcher
+    restart: unless-stopped
+    volumes:
+      # Mount your watched directory
+      - ./watched:/home/node/watched
+      # Mount directory for history file persistence
+      - ./history:/home/node/history
+      # Mount directory for log file persistence  
+      - ./logs:/home/node/logs
+      # Mount SSL client key if using client certificate authentication
+      # - ./certs/client.key:/home/node/certs/client.key:ro
+      # Mount additional CA certificates if needed
+      # - ./certs/ca-bundle.pem:/home/node/certs/ca-bundle.pem:ro
+    environment:
+      # Required: STIG Manager API configuration
+      WATCHER_API_BASE: "http://hostname:64001/api"
+      WATCHER_AUTHORITY: "http://hostname:8082"
+      WATCHER_CLIENT_ID: "admin"
+      WATCHER_COLLECTION: "9"
+      
+      # Authentication - use either client secret OR client key
+      WATCHER_CLIENT_SECRET: "your-client-secret-here"
+      # WATCHER_CLIENT_KEY: "/home/node/certs/client.key"
+      # WATCHER_CLIENT_KEY_PASSPHRASE: "your-passphrase-if-needed"
+      
+      # Optional: Watcher behavior configuration
+      WATCHER_MODE: "scan"
+      WATCHER_ADD_EXISTING: "true"
+      WATCHER_CREATE_OBJECTS: "true"
+      WATCHER_SCAN_INTERVAL: "300000"
+      WATCHER_LOG_LEVEL: "info"
+      WATCHER_LOG_FILE_LEVEL: "verbose"
+      
+      # Optional: SSL configuration
+      # NODE_EXTRA_CA_CERTS: "/home/node/certs/ca-bundle.pem"
+      
+    # Uncomment to run in one-shot mode (process existing files and exit)  
+    # command: ["--one-shot"]
