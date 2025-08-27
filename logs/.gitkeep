@@ -1,0 +1,2 @@
+# Directory for log files
+# Application logs are written here when WATCHER_LOG_FILE is configured

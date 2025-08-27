@@ -18,6 +18,30 @@ The client is suitable for use as a service or daemon, as a scheduled task, in a
 
 You can install Watcher using one of these methods:
 
+### Using Docker (Recommended)
+
+```bash
+# Build the container
+docker build -t stigman-watcher .
+
+# Run with docker-compose (easiest)
+docker-compose up
+
+# Or run directly with docker
+docker run --rm \
+  -v ./watched:/home/node/watched \
+  -v ./history:/home/node/history \
+  -v ./logs:/home/node/logs \
+  -e WATCHER_API_BASE=http://hostname:64001/api \
+  -e WATCHER_AUTHORITY=http://hostname:8082 \
+  -e WATCHER_CLIENT_ID=admin \
+  -e WATCHER_CLIENT_SECRET=your-secret \
+  -e WATCHER_COLLECTION=9 \
+  stigman-watcher
+```
+
+See [DOCKER.md](DOCKER.md) for comprehensive containerization documentation.
+
 ### Copy a Release binary to a destination of your choice and execute
 ```
 $ ./stigman-watcher-linuxstatic [options]
