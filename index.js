@@ -140,8 +140,15 @@ async function hasMinApiVersion () {
 }
 
 async function hasSSEEndpoint() {
-  const [sseEndpoint] = await api.getDefinition('$.paths./op/state/sse')
-  return !!sseEndpoint
+  try {
+    const [sseEndpoint] = await api.getDefinition('$.paths./op/state/sse')
+    return !!sseEndpoint
+  }
+  catch (e) {
+    logger.warn({ component, message: 'failed to determine if api has sse endpoint. assuming it does not.', error: e })
+    return false
+  }
+ 
 }
 
 // count of EventSource reconnect attempts
