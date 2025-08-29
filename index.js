@@ -4,7 +4,7 @@ import { options, configValid }  from './lib/args.js'
 import * as CONSTANTS from './lib/consts.js'
 const minApiVersion = CONSTANTS.MIN_API_VERSION
 const component = 'index'
-let currentMode
+let currentApiMode
 if (!configValid) {
   logger.error({ component, message: 'invalid configuration... Exiting'})
   logger.end()
@@ -80,6 +80,7 @@ async function run() {
  * This function will not resolve until `alarmLowered` fires.
  */
 async function apiNotNormalGate() {
+  logger.warn({ component, message: 'stig manager api is not in normal mode. waiting for it to return to normal mode' })
   return new Promise((resolve) => {
     const onLowered = (alarmType) => {
       if (alarmType === 'apiNotNormal') {
@@ -138,6 +139,11 @@ async function hasMinApiVersion () {
   }
 }
 
+async function hasSSEEndpoint() {
+  const [sseEndpoint] = await api.getDefinition('$.paths./op/state/sse')
+  return !!sseEndpoint
+}
+
 // count of EventSource reconnect attempts
 let esRetryCount = 0
 const esRetryLimit = 5
@@ -150,19 +156,18 @@ const esRetryLimit = 5
 async function initEventSource() {
   const es = await api.getAPIEventStream()
   // Log when connection is established
-  es.onopen = () => logger.info({ component, message: 'Connected to Stig Manager API server state event' })
+  es.onopen = () => logger.debug({ component, message: 'connected to stig manager api server state event' })
 
   // Log and handle connection errors
   es.onerror = (e) => {
-    logger.error({ component, message: 'Failed to connect to Stig Manager API state server side event.', error: e })
+    logger.error({ component, message: 'failed to connect to stig manager api state server side event', error: e })
     esRetryCount++
       if (esRetryCount > esRetryLimit) {
-        logger.error({ component, message: `Stig Manager API event stream reconnect retry limit reached (${esRetryLimit}).` })
+        logger.error({ component, message: `stig manager api event stream reconnect retry limit reached (${esRetryLimit})` })
         Alarm.shutdown(CONSTANTS.ERR_APIOFFLINE)
       }
   }
 
-  
   /**
    * Returns a Promise that resolves with the initial state payload received from a 'state-report' event.
    * 
@@ -171,51 +176,53 @@ async function initEventSource() {
    * the Promise with the parsed payload.
    *
    */
- const getInitialState = new Promise((resolve) => {
+  const getInitialState = new Promise((resolve) => {
     const onStart = (e) => {
       let payload
       try { 
         payload = JSON.parse(e.data)
       }
       catch (err) {
-        logger.error({ component, message: 'Failed to get Stig Manager API mode.', error: err })
+        logger.error({ component, message: 'failed to get stig manager api mode.', error: err })
         return
       }
-      logger.info({ component, message: 'Stig Manager Initial State Report', state: payload })
-      currentMode = payload?.mode?.currentMode
+      logger.info({ component, message: 'stig manager initial state report', state: payload })
+      currentApiMode = payload?.mode?.currentMode
       Alarm.apiNotNormal(payload?.mode?.currentMode !== 'normal')
-      es.removeEventListener('state-report', onStart)
       resolve(payload)
     }
     es.addEventListener('state-report', onStart, { once: true })
   })
   
   // Handler for 'state-report' and 'mode-changed' events
-  const handleEvent = (e) => {
+  const handleStateEvent = (e) => {
     let payload 
     try {
       payload = JSON.parse(e.data)
     }
     catch (err) {
-      logger.error({ component, message: 'Failed to get Stig Manager API mode.', error: err })
+      logger.error({ component, message: 'failed to get stig manager api mode.', error: err })
       return
     }
-    if(payload?.mode?.currentMode !== currentMode) {
-      currentMode = payload?.mode?.currentMode
-      logger.info({ component, message: 'Stig Manager Mode Changed', state: payload })
+    if(payload?.mode?.currentMode !== currentApiMode) {
+      currentApiMode = payload?.mode?.currentMode
+      logger.info({ component, message: 'stig manager mode changed', state: payload })
     }
     Alarm.apiNotNormal(payload?.mode?.currentMode !== 'normal')
   }
   // wait for the initial state before adding event listeners
   await getInitialState
 
-  es.addEventListener('state-report', handleEvent)
-  es.addEventListener('mode-changed', handleEvent)
+  es.addEventListener('mode-changed', handleStateEvent)
 }
 
 async function preflightServices () {
-  await initEventSource()
-  // block here until api is in normal mode so we continue with preflights 
+  // need to do a check to see if we arent hitting an old api that doesnt support sse endpoint  
+  if(await hasSSEEndpoint()) {
+    // if we have the sse endpoint, init the event source to monitor api mode
+    await initEventSource()
+  }
+  // block here until api is in normal mode (if applicable) so we continue with preflights 
   if (Alarm.isAlarmed()) {
     await apiNotNormalGate()
   }
