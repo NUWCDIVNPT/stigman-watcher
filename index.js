@@ -113,14 +113,15 @@ function logError(e) {
 }
 
 async function hasMinApiVersion () {
-  const [remoteApiVersion] = await api.getDefinition('$.info.version')
-  logger.info({ component, message: `preflight API version`, minApiVersion, remoteApiVersion})
-  if (semverGte(remoteApiVersion, minApiVersion)) {
-    return true
-  }
-  else {
-    throw new Error(`Remote API version ${remoteApiVersion} is not compatible with this release.`)
-  }
+    const [remoteApiVersion] = await api.getDefinition('$.info.version')
+    logger.info({ component, message: `preflight API version`, minApiVersion, remoteApiVersion})
+    if (semverGte(remoteApiVersion, minApiVersion)) {
+      return true
+    }
+    else {
+      logger.warn({ component, message: `Remote API version ${remoteApiVersion} is not compatible with this release (minimum required: ${minApiVersion}). Proceeding anyway.`})
+      return true
+    }
 }
 
 async function preflightServices () {
