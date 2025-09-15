@@ -2,7 +2,6 @@
 import { logger, getSymbol } from './lib/logger.js'
 import { options, configValid }  from './lib/args.js'
 import * as CONSTANTS from './lib/consts.js'
-const minApiVersion = CONSTANTS.MIN_API_VERSION
 const component = 'index'
 if (!configValid) {
   logger.error({ component, message: 'invalid configuration... Exiting'})
@@ -14,7 +13,6 @@ import * as auth from './lib/auth.js'
 import * as api from './lib/api.js'
 import { serializeError } from 'serialize-error'
 import { initScanner } from './lib/scan.js'
-import semverGte from 'semver/functions/gte.js'
 import Alarm from './lib/alarm.js'
 
 
@@ -112,19 +110,11 @@ function logError(e) {
   logger.error(errorObj)
 }
 
-async function hasMinApiVersion () {
-  const [remoteApiVersion] = await api.getDefinition('$.info.version')
-  logger.info({ component, message: `preflight API version`, minApiVersion, remoteApiVersion})
-  if (semverGte(remoteApiVersion, minApiVersion)) {
-    return true
-  }
-  else {
-    throw new Error(`Remote API version ${remoteApiVersion} is not compatible with this release.`)
-  }
-}
-
 async function preflightServices () {
-  await hasMinApiVersion()
+  // Fetch and log API version (informational only)
+  const [remoteApiVersion] = await api.getDefinition('$.info.version')
+  logger.info({ component, message: `preflight API version`, remoteApiVersion})
+
   await auth.getOpenIDConfiguration()
   await auth.getToken()
   logger.info({ component, message: `preflight token request succeeded`})
