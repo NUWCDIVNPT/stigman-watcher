@@ -25,7 +25,6 @@ describe("setup and teardown", function () {
     this.timeout(180_000)
     let db, auth, api
     let watcher
-    let apiBase
 
     const env = {
       apiBase: "http://localhost:54001/api",
@@ -55,7 +54,7 @@ describe("setup and teardown", function () {
       const { user, collection } = await lib.initWatcherTestCollection()
       env.collectionId = collection.collectionId
       await lib.uploadTestStig('VPN_STIG.xml')
-      watcher = await lib.runWatcherPromise({ entry: "index.js", env, consoleLog: true, resolveOnMessage: `received shutdown event with code 0, exiting`})
+      watcher = await lib.runWatcherPromise({ entry: "index.js", env,  resolveOnMessage: `received shutdown event with code 0, exiting`})
     })
     
     after(async () => {
@@ -298,7 +297,7 @@ describe("setup and teardown", function () {
       await lib.uploadTestStig('VPN_STIG.xml')
 
       // run watcher and wait for graceful exit
-      watcher = await lib.runWatcherPromise({ entry: 'index.js', env, consoleLog: true, resolveOnMessage: `received shutdown event with code 0, exiting` })
+      watcher = await lib.runWatcherPromise({ entry: 'index.js', env,  resolveOnMessage: `received shutdown event with code 0, exiting` })
     })
 
     after(async () => {
@@ -385,7 +384,7 @@ describe("setup and teardown", function () {
       await lib.uploadTestStig('VPN_STIG.xml')
 
       // run watcher and wait for graceful exit
-      watcher = await lib.runWatcherPromise({ entry: 'index.js', env, consoleLog: true, resolveOnMessage: `received shutdown event with code 0, exiting` })
+      watcher = await lib.runWatcherPromise({ entry: 'index.js', env,  resolveOnMessage: `received shutdown event with code 0, exiting` })
     })
 
     after(async () => {
@@ -429,7 +428,6 @@ describe("setup and teardown", function () {
     this.timeout(180_000)
     let db, auth, api
     let watcher
-    let apiBase
 
     const env = {
       apiBase: "http://localhost:54001/api",
@@ -463,7 +461,7 @@ describe("setup and teardown", function () {
       for (let i = 1; i <= 5; i++) {
         await lib.createCkl(BASE_CKL_PATH, `test/e2e/scrapFiles/test${i}.ckl`, `test${i}`)
       }
-      watcher = await lib.runWatcherPromise({ entry: "index.js", env, consoleLog: true, resolveOnMessage: `received shutdown event with code 0, exiting`})
+      watcher = await lib.runWatcherPromise({ entry: "index.js", env,  resolveOnMessage: `received shutdown event with code 0, exiting`})
     })
     
     after(async () => {
@@ -620,7 +618,7 @@ describe("setup and teardown", function () {
       env.collectionId = collection.collectionId
       lib.clearDirectory(env.path)
       await lib.uploadTestStig('VPN_STIG.xml')
-      watcher = await lib.runWatcher({ entry: 'index.js', env: env, consoleLog: true })
+      watcher = await lib.runWatcher({ entry: 'index.js', env: env, })
     })
 
     after(async () => {
@@ -740,7 +738,7 @@ describe("setup and teardown", function () {
       const { collection } = await lib.initWatcherTestCollection()
       env.collectionId = collection.collectionId
       await lib.uploadTestStig('VPN_STIG.xml')
-      watcher = await lib.runWatcher({ entry: 'index.js', env: env, consoleLog: true })
+      watcher = await lib.runWatcher({ entry: 'index.js', env: env, })
     })
 
     after(async () => {
@@ -825,7 +823,6 @@ describe("setup and teardown", function () {
     this.timeout(120_000)
     let db, auth, api
     let watcher
-    let apiBase
 
     const env = {
       apiBase: "http://localhost:54001/api",
@@ -855,7 +852,7 @@ describe("setup and teardown", function () {
       const { user, collection } = await lib.initWatcherTestCollection()
       env.collectionId = collection.collectionId
       await lib.uploadTestStig('VPN_STIG.xml')
-      watcher = await lib.runWatcherPromise({ entry: "index.js", env, consoleLog: true, resolveOnMessage: `finished one shot mode - no work to do`})
+      watcher = await lib.runWatcherPromise({ entry: "index.js", env,  resolveOnMessage: `finished one shot mode - no work to do`})
     })
     
 
@@ -941,10 +938,10 @@ describe("setup and teardown", function () {
       api = await lib.startApi()
      
       const { user, collection } = await lib.initWatcherTestCollection()
-      watcher = await lib.runWatcherPromise({ entry: "index.js", env: env, consoleLog: true, resolveOnMessage: 'running' })
+      watcher = await lib.runWatcherPromise({ entry: "index.js", env: env,  resolveOnMessage: 'running' })
       env.collectionId = collection.collectionId
       await lib.uploadTestStig('VPN_STIG.xml')
-      watcher = await lib.runWatcherPromise({ entry: "index.js", env, consoleLog: true, resolveOnMessage: `received shutdown event with code 0, exiting`})
+      watcher = await lib.runWatcherPromise({ entry: "index.js", env,  resolveOnMessage: `received shutdown event with code 0, exiting`})
     })
 
     after(async () => {
@@ -1001,7 +998,7 @@ describe("setup and teardown", function () {
       
       const { user, collection } = await lib.initWatcherTestCollection()
       env.collectionId = collection.collectionId
-      watcher = await lib.runWatcherPromise({ entry: "index.js", env, consoleLog: true, resolveOnMessage: `received shutdown event with code 0, exiting`})
+      watcher = await lib.runWatcherPromise({ entry: "index.js", env,  resolveOnMessage: `received shutdown event with code 0, exiting`})
     })
     
 
@@ -1132,7 +1129,7 @@ describe("setup and teardown", function () {
       const { collection } = await lib.initWatcherTestCollection()
       env.collectionId = collection.collectionId
       await lib.uploadTestStig('VPN_STIG.xml')
-      watcher = await lib.runWatcherPromise({ entry: "index.js", env, consoleLog: true, resolveOnMessage: `received shutdown event with code 0, exiting`})
+      watcher = await lib.runWatcherPromise({ entry: "index.js", env,  resolveOnMessage: `received shutdown event with code 0, exiting`})
     })
 
     after(async () => {
@@ -1223,7 +1220,7 @@ describe("setup and teardown", function () {
         await lib.createCkl(BASE_CKL_PATH, `${ignorePath}/ignore${i}.ckl`, `ignore${i}`)
       }
 
-      watcher = await lib.runWatcherPromise({ entry: "index.js", env, consoleLog: true, resolveOnMessage: `received shutdown event with code 0, exiting`})
+      watcher = await lib.runWatcherPromise({ entry: "index.js", env,  resolveOnMessage: `received shutdown event with code 0, exiting`})
     })
     
     after(async () => {
@@ -1343,7 +1340,7 @@ describe("setup and teardown", function () {
       // create asset that the files will match on but it has no stigs associated
       await lib.createAsset(null, collection.collectionId)
       await lib.uploadTestStig('VPN_STIG.xml')
-      watcher = await lib.runWatcherPromise({ entry: 'index.js', env, consoleLog: true, resolveOnMessage: `received shutdown event with code 0, exiting` })
+      watcher = await lib.runWatcherPromise({ entry: 'index.js', env,  resolveOnMessage: `received shutdown event with code 0, exiting` })
     })
 
     after(async () => {
@@ -1437,7 +1434,7 @@ describe("setup and teardown", function () {
       env.collectionId = collection.collectionId
       await lib.uploadTestStig('VPN_STIG.xml')
       auth.clientCredentialsLifetime = 10 // make tokens short lived to force a refresh during the test
-      watcher = await lib.runWatcher({ entry: 'index.js', env: env, consoleLog: true })
+      watcher = await lib.runWatcher({ entry: 'index.js', env: env, })
     })
 
     after(async () => {
@@ -1524,7 +1521,7 @@ describe("setup and teardown", function () {
       env.collectionId = collection.collectionId
       await lib.uploadTestStig('VPN_STIG.xml')
       auth.clientCredentialsLifetime = 10 // make tokens short lived to force a refresh during the test
-      watcher = await lib.runWatcher({ entry: 'index.js', env: env, consoleLog: true })
+      watcher = await lib.runWatcher({ entry: 'index.js', env: env, })
     })
 
     after(async () => {
@@ -1608,7 +1605,7 @@ describe("setup and teardown", function () {
       const { collection } = await lib.initWatcherTestCollection()
       env.collectionId = collection.collectionId
       await lib.uploadTestStig('VPN_STIG.xml')
-      watcher = await lib.runWatcher({ entry: 'index.js', env: env, consoleLog: true })
+      watcher = await lib.runWatcher({ entry: 'index.js', env: env, })
     })
 
     after(async () => {
@@ -1694,7 +1691,7 @@ describe("setup and teardown", function () {
       const { collection } = await lib.initWatcherTestCollection()
       env.collectionId = collection.collectionId
       await lib.uploadTestStig('VPN_STIG.xml')
-      watcher = await lib.runWatcher({ entry: 'index.js', env: env, consoleLog: true })
+      watcher = await lib.runWatcher({ entry: 'index.js', env: env, })
     })
 
     after(async () => {
@@ -1774,7 +1771,7 @@ describe("setup and teardown", function () {
       await lib.initNetwork()
       db = await lib.startDb()
       auth = await lib.startAuth()
-      watcher = await lib.runWatcherPromise({ entry: 'index.js', env: env, consoleLog: true })
+      watcher = await lib.runWatcherPromise({ entry: 'index.js', env: env, })
     })
 
     after(async () => {
@@ -1826,7 +1823,7 @@ describe("setup and teardown", function () {
       env.collectionId = collection.collectionId
       await lib.uploadTestStig('VPN_STIG.xml')
       await auth.stop()
-      watcher = await lib.runWatcher({ entry: 'index.js', env: env, consoleLog: true })
+      watcher = await lib.runWatcher({ entry: 'index.js', env: env, })
     })
 
     after(async () => {
@@ -1880,7 +1877,7 @@ describe("setup and teardown", function () {
       auth = await lib.startAuth()
       api = await lib.startApi()
       await lib.uploadTestStig('VPN_STIG.xml')
-      watcher = await lib.runWatcher({ entry: 'index.js', env: env, consoleLog: true })
+      watcher = await lib.runWatcher({ entry: 'index.js', env: env, })
     })
 
     after(async () => {
@@ -1930,7 +1927,7 @@ describe("setup and teardown", function () {
       const { collection } = await lib.initWatcherTestCollection() // create a collection but do not give the watcher access to it
       env.collectionId = collection.collectionId
       await lib.uploadTestStig('VPN_STIG.xml')
-      watcher = await lib.runWatcher({ entry: 'index.js', env: env, consoleLog: true })
+      watcher = await lib.runWatcher({ entry: 'index.js', env: env, })
     })
 
     after(async () => {
@@ -1985,7 +1982,7 @@ describe("setup and teardown", function () {
       const { collection } = await lib.initWatcherTestCollection()
       env.collectionId = collection.collectionId
       await lib.uploadTestStig('VPN_STIG.xml')
-      watcher = await lib.runWatcher({ entry: 'index.js', env: env, consoleLog: true })
+      watcher = await lib.runWatcher({ entry: 'index.js', env: env, })
     })
 
     after(async () => {
