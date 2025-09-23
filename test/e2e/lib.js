@@ -83,6 +83,8 @@ export async function runWatcherPromise ({
       `${env.cargoDelay}`,
       '--cargo-size',
       `${env.cargoSize}`,
+  ...(typeof (env.retryInterval ?? env.retryDelay) !== 'undefined' ? ['--retry-interval', `${env.retryInterval ?? env.retryDelay}`] : []),
+  ...(typeof env.retryCount !== 'undefined' ? ['--retry-count', `${env.retryCount}`] : []),
       ...(env.addExisting ? ['--add-existing'] : [])
     ]
 
@@ -181,6 +183,8 @@ export async function runWatcher ({
       `${env.noCreateObjects ? '--no-create-objects' : ''}`,
       '--cargo-size',
       `${env.cargoSize}`,
+  ...(typeof (env.retryInterval ?? env.retryDelay) !== 'undefined' ? ['--retry-interval', `${env.retryInterval ?? env.retryDelay}`] : []),
+  ...(typeof env.retryCount !== 'undefined' ? ['--retry-count', `${env.retryCount}`] : []),
       ...(env.addExisting ? ['--add-existing'] : [])
     ]
 
