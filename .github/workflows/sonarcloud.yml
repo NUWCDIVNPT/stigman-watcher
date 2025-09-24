@@ -30,7 +30,7 @@ jobs:
         with:
           fetch-depth: 0 # Important to fetch all history for accurate blame information
       - name: Analyze Watcher with SonarCloud
-        uses: SonarSource/sonarcloud-github-action@v2.0.2
+        uses: SonarSource/sonarqube-scan-action@v6.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_WATCHER }} # Needed to push to SonarCloud
