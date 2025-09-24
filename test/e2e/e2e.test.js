@@ -1991,8 +1991,6 @@ describe("setup and teardown", function () {
           watcher.process.kill()
         }
       } catch (e) {}
-      lib.stopProcesses([api, auth, db])
-      lib.clearDirectory(env.path)
     })
 
     it('starts running and begins watching', async () => {
