@@ -1006,7 +1006,7 @@ describe("setup and teardown", function () {
       lib.stopProcesses([api, auth, db])
     })
 
-    it("should log the correct startup messag with config etc. ", async () => {
+    it("should log the correct startup message with config etc. ", async () => {
 
       expect(watcher.logRecords.some(r => r.message === `running`)).to.be.true
       const expectedOptions = {
