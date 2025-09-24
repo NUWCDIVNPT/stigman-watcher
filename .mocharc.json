@@ -1,0 +1,5 @@
+{
+  "extension": ["js"],
+  "spec": "test/**/*.test.js",
+  "file": ["test/e2e/env.js"]
+}
