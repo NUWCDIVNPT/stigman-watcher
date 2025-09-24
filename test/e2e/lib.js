@@ -189,7 +189,7 @@ export async function runWatcher ({
       options.push('--inspect-brk')
     }
     options.push(indexJsPath)
-        const watcherEnv = {
+    const watcherEnv = {
       ...env,
       WATCHER_CLIENT_SECRET: env.clientSecret
     }
