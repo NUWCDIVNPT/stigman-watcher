@@ -61,7 +61,7 @@ describe("setup and teardown", function () {
       lib.stopProcesses([api, auth, db])
     })
 
-    it("should log the correct startup messag with config etc. ", async () => {
+    it("should log the correct startup message with config etc. ", async () => {
 
       expect(watcher.logRecords.some(r => r.message === `running`)).to.be.true
       const expectedOptions = {
@@ -699,7 +699,7 @@ describe("setup and teardown", function () {
       const reviews = watcher.logRecords.filter(r => r.component === 'cargo' && r.message === 'posted reviews' && r.asset && r.asset.name === 'dropped')
       expect(reviews.length).to.equal(2)
 
-      // expect one of the reviews to ahve asset.affected.updated = 1 
+      // expect one of the reviews to have asset.affected.updated = 1 
       const updated = reviews.find(r => r.affected && r.affected.updated === 1)
       expect(updated).to.exist
 
@@ -861,7 +861,7 @@ describe("setup and teardown", function () {
     })
 
 
-    it("should log the correct startup messag with config etc. ", async () => {
+    it("should log the correct startup message with config etc. ", async () => {
       
       expect(watcher.logRecords.some(r => r.message === `running`)).to.be.true
       const expectedOptions = {
@@ -1006,7 +1006,7 @@ describe("setup and teardown", function () {
       lib.stopProcesses([api, auth, db])
     })
 
-    it("should log the correct startup messag with config etc. ", async () => {
+    it("should log the correct startup message with config etc. ", async () => {
 
       expect(watcher.logRecords.some(r => r.message === `running`)).to.be.true
       const expectedOptions = {
@@ -1304,7 +1304,7 @@ describe("setup and teardown", function () {
 
   })
 
-  describe("Should create new asset Stig accociations for an existing asset. ", async function () {
+  describe("Should create new asset Stig associations for an existing asset. ", async function () {
     this.timeout(180_000)
     let db, auth, api
     let watcher
