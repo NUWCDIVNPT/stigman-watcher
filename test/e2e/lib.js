@@ -1,6 +1,6 @@
 import path, { resolve, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { spawn, execSync } from 'node:child_process'
+import { spawn } from 'node:child_process'
 import EventEmitter from 'node:events'
 import * as readline from 'node:readline'
 import MockOidc from './mockOidc.js'

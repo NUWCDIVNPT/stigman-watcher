@@ -13,7 +13,7 @@
     "stigman-watcher": "index.js"
   },
   "scripts": {
-    "test": "c8 --reporter=html --reporter=text mocha  './test/**/*.test.js'"
+    "test": "c8 --reporter=html --reporter=text mocha"
   },
   "engines": {
     "node": ">=14"
