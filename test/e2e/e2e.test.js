@@ -1304,7 +1304,7 @@ describe("setup and teardown", function () {
 
   })
 
-  describe("Should create new asset Stig accociations for an existing asset. ", async function () {
+  describe("Should create new asset Stig associations for an existing asset. ", async function () {
     this.timeout(180_000)
     let db, auth, api
     let watcher
