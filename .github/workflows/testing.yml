@@ -1,4 +1,4 @@
-name: Run Unit Tests and Upload Coverage Artifact
+name: Run Tests and Upload Coverage Artifact
 on:
   workflow_dispatch:
   push:
@@ -8,7 +8,7 @@ on:
         - "lib/**"
         - "index.js"
         - "test/**"
-        - ".github/workflows/unit-testing.yml"
+        - ".github/workflows/testing.yml"
   pull_request:
     branches:
         - main
@@ -16,7 +16,7 @@ on:
         - "lib/**"
         - "index.js"
         - "test/**"
-        - ".github/workflows/unit-testing.yml"
+        - ".github/workflows/testing.yml"
 jobs:
   build_test:
     runs-on: ubuntu-latest
