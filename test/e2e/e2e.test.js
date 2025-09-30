@@ -1469,22 +1469,6 @@ describe("setup and teardown", function () {
       expect(watcher.logRecords.some(r => r.component === 'index' && r.message === 'Alarm lowered: authOffline')).to.be.true
     })
 
-  // these are skipped because event mode cant retry a failed batch yet
-  it.skip("wait for batch id 2 (retrying the original failed batch)", async () => {
-      await lib.waitFor(() => watcher.logRecords.some(r => r.component === 'cargo' && r.message === 'batch ended' && r.batchId === 2), 2002200)
-      expect(watcher.logRecords.some(r => r.component === 'cargo' && r.message === 'batch ended' && r.batchId === 2)).to.be.true
-    })
-
-    it.skip("should create assets for the 2 files", async () => {
-      const created = watcher.logRecords.filter(r => r.component === 'cargo' && r.message === 'asset created' && r.asset && r.asset.name)
-      expect(created.length).to.be.at.least(2)
-      const names = created.map(c => c.asset.name)
-      const expected = ['api-offline1','api-offline2']
-      for (const name of expected) {
-        expect(names).to.include(name)
-      }
-    })
-
   })
 
   describe("Scan Mode, start normal, take down auth service, go offline, bring auth back up and continue.", async function () {
@@ -1631,7 +1615,6 @@ describe("setup and teardown", function () {
       await lib.waitFor(() => watcher.logRecords.some(r => r.component === 'index' && r.message === 'Alarm raised: apiOffline'), 20000)
       expect(watcher.logRecords.some(r => r.component === 'index' && r.message === 'Alarm raised: apiOffline')).to.be.true
     })
-  
 
     it("restarts the api service", async () => {
       api = await lib.startApi()
@@ -1642,21 +1625,6 @@ describe("setup and teardown", function () {
       expect(watcher.logRecords.some(r => r.component === 'index' && r.message === 'Alarm lowered: apiOffline')).to.be.true
     })
 
-    // these are skipped because event mode cant retry a failed batch yet
-  it.skip("wait for batch id 2 (retrying the original failed batch)", async () => {
-      await lib.waitFor(() => watcher.logRecords.some(r => r.component === 'cargo' && r.message === 'batch ended' && r.batchId === 2), 2002200)
-      expect(watcher.logRecords.some(r => r.component === 'cargo' && r.message === 'batch ended' && r.batchId === 2)).to.be.true
-    })
-
-    it.skip("should create assets for the 2 files", async () => {
-      const created = watcher.logRecords.filter(r => r.component === 'cargo' && r.message === 'asset created' && r.asset && r.asset.name)
-      expect(created.length).to.be.at.least(2)
-      const names = created.map(c => c.asset.name)
-      const expected = ['api-offline1','api-offline2']
-      for (const name of expected) {
-        expect(names).to.include(name)
-      }
-    })
   })
 
   describe("Scan Mode, stop api and go api offline, come back up, then take api back down and eventually exit", async function () {
@@ -1701,7 +1669,6 @@ describe("setup and teardown", function () {
         }
       } catch (e) {}
       lib.stopProcesses([api, auth, db])
-      lib.clearDirectory("test/e2e/scrapFiles")
     })
 
     it("stops the api service", async () => {
@@ -1991,6 +1958,7 @@ describe("setup and teardown", function () {
           watcher.process.kill()
         }
       } catch (e) {}
+      lib.stopProcesses([api, auth, db])
     })
 
     it('starts running and begins watching', async () => {
@@ -2104,5 +2072,250 @@ describe("setup and teardown", function () {
 
   })
 
+  describe("Should Start up normally, Take down API, go api offline and eventually exit on retry count reached", function () {
+
+    this.timeout(180_000)
+    let db, auth, api
+    let watcher
+    const env = {
+      apiBase: "http://localhost:54001/api",
+      authority: `http://localhost:8080`,
+      collectionId: "1",
+      clientId: "stigman-watcher",
+      clientSecret: "954fd71a-dad6-47ab-8035-060268f3d396",
+      path: "test/e2e/scrapFiles",
+      oneShot: false,
+      mode: "events",
+      historyFile: "test/e2e/e2e-history.txt",
+      responseTimeout: 10000,
+      historyWriteInterval: 10000,
+      cargoDelay: 8000, // 5 second cargo delay
+      logLevel: "verbose",
+      cargoSize: 5, // Set cargo size to 5
+      addExisting: false, // Don't process existing files
+      retryCount: 7, // Set low retry count for test
+      retryDelay: 3000, // 3 second retry delay
+    }
+
+    before(async () => {
+      await lib.clearHistoryFileContents(env.historyFile)
+      await lib.clearDirectory(env.path)
+      await lib.initNetwork()
+      db = await lib.startDb()
+      auth = await lib.startAuth()
+      api = await lib.startApi()
+
+      const { collection } = await lib.initWatcherTestCollection()
+      env.collectionId = collection.collectionId
+      await lib.uploadTestStig('VPN_STIG.xml')
+      watcher = await lib.runWatcher({ entry: 'index.js', env: env, })
+    })
+
+    after(async () => {
+      try {
+        if (watcher && watcher.process) {
+          watcher.process.kill()
+        }
+      } catch (e) {}
+      lib.stopProcesses([api, auth, db])
+    })
+    
+    it('starts running and begins watching', async () => {
+      await lib.waitFor(() => watcher.logRecords.some(r => r.message === 'running'), 30000)
+      expect(watcher.logRecords.some(r => r.message === 'running')).to.be.true
+      await lib.waitFor(() => watcher.logRecords.some(r => r.message === 'watching'), 20000)
+      expect(watcher.logRecords.some(r => r.message === 'watching')).to.be.true
+    })
+
+    it("should stop the api service", async () => {
+      await lib.waitFor(() => watcher.logRecords.some(r => r.message === 'preflight api requests succeeded'), 30000)
+      await api.stop()
+    })
+
+    it('should drop a single file and detect it', async () => {
+      await lib.createCkl(BASE_CKL_PATH, `${env.path}/api-exit-test.ckl`, 'api-exit-test')
+      
+      // Wait for file system event
+      await lib.waitFor(() => watcher.logRecords.some(r => 
+        r.component === 'events' && 
+        r.message === 'file system event'), 30000)
+      
+      const fsEvent = watcher.logRecords.find(r => 
+        r.component === 'events' && 
+        r.message === 'file system event' && 
+        r.file && r.file.endsWith('api-exit-test.ckl')
+      )
+      expect(fsEvent).to.exist
+      expect(fsEvent.event).to.equal('add')
+    })
+
+    it("should raise apiOffline alarm", async () => {
+      await lib.waitFor(() => watcher.logRecords.some(r => r.component === 'index' && r.message === 'Alarm raised: apiOffline'), 60000)
+      expect(watcher.logRecords.some(r => r.component === 'index' && r.message === 'Alarm raised: apiOffline')).to.be.true
+    })
+
+    
+    it("should retry 7 times at 3 seconds between retries and exit", async () => {
+      
+      await lib.waitFor(() => watcher.logRecords.some(r => r.component === 'index' && /shutdown event with code 1/i.test(r.message)), 120000)
+      expect(watcher.logRecords.some(r => r.component === 'index' && /shutdown event with code 1/i.test(r.message))).to.be.true
+      
+      const apiRetryLogs = watcher.logRecords.filter(r => r.component === 'api' && r.message === "Testing if API is online")
+      expect(apiRetryLogs.length).to.equal(env.retryCount)
+
+      const APImaxRetryLog = watcher.logRecords.filter(r => r.component === 'api' && r.message === "API connectivity maximum tries reached, requesting shutdown")
+      expect(APImaxRetryLog.length).to.equal(1)
+      expect(APImaxRetryLog[0].attempts).to.equal(env.retryCount)
+      
+
+    })
+  })
+
+  describe("Should Start up normally, Take down Auth, go auth offline and eventually exit on retry count reached", function () {
+  this.timeout(120_000)
+    let db, auth, api
+    let watcher
+    const env = {
+      apiBase: "http://localhost:54001/api",
+      authority: `http://localhost:8080`,
+      collectionId: "1",
+      clientId: "stigman-watcher",
+      clientSecret: "954fd71a-dad6-47ab-8035-060268f3d396",
+      path: "test/e2e/scrapFiles",
+      oneShot: false,
+      mode: "scan",
+      historyFile: "test/e2e/e2e-history.txt",
+      responseTimeout: 5000,
+      historyWriteInterval: 10000,
+      cargoDelay: 7000,
+      logLevel: "verbose",
+      scanInterval: 60000,
+      cargoSize: 2,
+      retryCount: 7, // Set low retry count for test
+      retryDelay: 7000, // 7 second retry delay
+    }
+
+    before(async () => {
+      await lib.clearHistoryFileContents(env.historyFile)
+      await lib.clearDirectory(env.path)
+      await lib.initNetwork()
+      db = await lib.startDb()
+      auth = await lib.startAuth()
+      api = await lib.startApi()
+      const { collection } = await lib.initWatcherTestCollection()
+      env.collectionId = collection.collectionId
+      await lib.uploadTestStig('VPN_STIG.xml')
+      auth.clientCredentialsLifetime = 10 // make tokens short lived to force a refresh during the test
+      watcher = await lib.runWatcher({ entry: 'index.js', env: env, })
+    })
+
+    after(async () => {
+      try {
+        if (watcher && watcher.process) {
+          watcher.process.kill()
+        }
+      } catch (e) {}
+      lib.stopProcesses([api, auth, db])
+    })
+
+    it("should start up normally then stop the auth service and raise alarm auth offline", async () => {
+      await lib.waitFor(() => watcher.logRecords.some(r => r.message === 'preflight api requests succeeded'), 20000)
+
+      await auth.stop()
+
+      for (let i = 1; i <= 2; i++) {
+        await lib.createCkl(BASE_CKL_PATH, `${env.path}/api-offline${i}.ckl`, `api-offline${i}`)
+      }
+      
+      await lib.waitFor(() => watcher.logRecords.some(r => r.component === 'index' && r.message === 'Alarm raised: authOffline'), 100000)
+      expect(watcher.logRecords.some(r => r.component === 'index' && r.message === 'Alarm raised: authOffline')).to.be.true
+    })
+
+    it("should retry 7 times at 3 seconds between retries and exit", async () => {
+      
+      await lib.waitFor(() => watcher.logRecords.some(r => r.component === 'index' && /shutdown event with code 2/i.test(r.message)), 120000)
+      expect(watcher.logRecords.some(r => r.component === 'index' && /shutdown event with code 2/i.test(r.message))).to.be.true
+
+      const authRetryLogs = watcher.logRecords.filter(r => r.component === 'auth' && r.message === "Testing if OIDC Provider is online")
+      expect(authRetryLogs.length).to.equal(env.retryCount)
+      const authMaxRetryLog = watcher.logRecords.filter(r => r.component === 'auth' && r.message === "OIDC Provider connectivity maximum tries reached, requesting shutdown")
+      expect(authMaxRetryLog.length).to.equal(1)
+      expect(authMaxRetryLog[0].attempts).to.equal(env.retryCount)
+    })
+  })
+
+  describe("Should retry indefinitely (retryCount=0) and make at least 10 attempts (for testing sake stop at 10)", function () {
+    this.timeout(180_000)
+    let db, auth, api
+    let watcher
+    const env = {
+      apiBase: "http://localhost:54001/api",
+      authority: `http://localhost:8080`,
+      collectionId: "1",
+      clientId: "stigman-watcher",
+      clientSecret: "954fd71a-dad6-47ab-8035-060268f3d396",
+      path: "test/e2e/scrapFiles",
+      oneShot: false,
+      mode: "events",
+      historyFile: "test/e2e/e2e-history.txt",
+      responseTimeout: 10000,
+      historyWriteInterval: 10000,
+      cargoDelay: 8000,
+      logLevel: "verbose",
+      cargoSize: 5,
+      addExisting: false,
+      retryCount: 0, // retry forever
+      retryInterval: 2000 // 2 second retry interval
+    }
+
+    before(async () => {
+      await lib.clearHistoryFileContents(env.historyFile)
+      await lib.clearDirectory(env.path)
+      await lib.initNetwork()
+      db = await lib.startDb()
+      auth = await lib.startAuth()
+      api = await lib.startApi()
+
+      const { collection } = await lib.initWatcherTestCollection()
+      env.collectionId = collection.collectionId
+      await lib.uploadTestStig('VPN_STIG.xml')
+      // short lived tokens so watcher will need to refresh while auth is stopped
+      auth.clientCredentialsLifetime = 2
+      watcher = await lib.runWatcher({ entry: 'index.js', env: env })
+    })
+
+    after(async () => {
+      try {
+        if (watcher && watcher.process) {
+          watcher.process.kill()
+        }
+      } catch (e) {}
+      lib.stopProcesses([api, auth, db])
+    })
+
+    it('starts running and then retries indefinitely (observe at least 10 retries)', async () => {
+      await lib.waitFor(() => watcher.logRecords.some(r => r.message === 'watching'), 20000)
+      expect(watcher.logRecords.some(r => r.message === 'watching')).to.be.true
+
+      // stop auth to trigger authOffline and retries
+      await auth.stop()
+
+      for (let i = 1; i <= 2; i++) {
+        await lib.createCkl(BASE_CKL_PATH, `${env.path}/api-offline${i}.ckl`, `api-offline${i}`)
+      }
+
+      await lib.waitFor(() => watcher.logRecords.some(r => r.component === 'index' && r.message === 'Alarm raised: authOffline'), 60000)
+      expect(watcher.logRecords.some(r => r.component === 'index' && r.message === 'Alarm raised: authOffline')).to.be.true
+
+      // wait until we have recorded at least 10 retry attempts
+      await lib.waitFor(() => {
+        const authRetryLogs = watcher.logRecords.filter(r => r.component === 'auth' && r.message === 'Testing if OIDC Provider is online')
+        return authRetryLogs.length >= 10
+      }, 120000)
+
+      const authRetryLogs = watcher.logRecords.filter(r => r.component === 'auth' && r.message === 'Testing if OIDC Provider is online')
+      expect(authRetryLogs.length).to.be.at.least(10)
+    })
+  })
 })
 
