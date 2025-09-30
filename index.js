@@ -57,9 +57,8 @@ async function run() {
       pid: process.pid,
       options: getObfuscatedConfig(options)
     })
-    
-    await preflightServices()
     setupAlarmHandlers()
+    await preflightServices()
     if (options.mode === 'events') {
       startFsEventWatcher()
     }
@@ -110,26 +109,55 @@ function logError(e) {
   logger.error(errorObj)
 }
 
+function waitForAlarmLowered(alarmType) {
+  return new Promise((resolve) => {
+    const onLowered = (t) => {
+      if (t === alarmType) {
+        Alarm.off('alarmLowered', onLowered)
+        resolve()
+      }
+    }
+    Alarm.on('alarmLowered', onLowered)
+  })
+}
+
+// run function, wait for it to complete, retrying if an alarm is raised
+async function runWithAlarmRetry(alarmType, func) {
+  while (true) {
+    try {
+      return await func()
+    } catch (e) {
+      // If the alarm is active, wait for the retry handler to clear it, then loop.
+      if (Alarm.isAlarmed(alarmType)) {
+        await waitForAlarmLowered(alarmType)
+        continue
+      }
+      throw e
+    }
+  }
+}
+
+
 async function preflightServices () {
   // Fetch and log API version (informational only)
-  const [remoteApiVersion] = await api.getDefinition('$.info.version')
+  const [remoteApiVersion] = await runWithAlarmRetry('apiOffline', () => api.getDefinition('$.info.version'))
   logger.info({ component, message: `preflight API version`, remoteApiVersion})
 
-  await auth.getOpenIDConfiguration()
-  await auth.getToken()
+  await runWithAlarmRetry('authOffline', () => auth.getOpenIDConfiguration())
+  await runWithAlarmRetry('noToken',       () => auth.getToken())
+
   logger.info({ component, message: `preflight token request succeeded`})
-  const promises = [
-    api.getCollection(options.collectionId),
-    api.getInstalledStigs(),
-    api.getScapBenchmarkMap()
-  ]
-  await Promise.all(promises)
+
+  await runWithAlarmRetry('apiOffline', () => api.getCollection(options.collectionId))
+  await runWithAlarmRetry('apiOffline', () => api.getInstalledStigs())
+  await runWithAlarmRetry('apiOffline', () => api.getScapBenchmarkMap())
+  
   setInterval(refreshCollection, 10 * 60000)
   
   // OAuth scope 'stig-manager:user:read' was not required for early versions of Watcher
   // For now, fail gracefully if we are blocked from calling /user
   try {
-    await api.getUser()
+    await runWithAlarmRetry('apiOffline', () => api.getUser())
     setInterval(refreshUser, 10 * 60000)
   }
   catch (e) {
