@@ -2121,10 +2121,10 @@ describe("setup and teardown", function () {
       historyFile: "test/e2e/e2e-history.txt",
       responseTimeout: 10000,
       historyWriteInterval: 10000,
-      cargoDelay: 8000, // 5 second cargo delay
+      cargoDelay: 8000, 
       logLevel: "verbose",
       cargoSize: 1,
-      addExisting: true, // Don't process existing files
+      addExisting: true, // process existing files
     }
 
     before(async () => {
