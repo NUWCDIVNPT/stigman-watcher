@@ -2093,7 +2093,7 @@ describe("setup and teardown", function () {
       logLevel: "verbose",
       cargoSize: 5, // Set cargo size to 5
       addExisting: false, // Don't process existing files
-      retryCount: 7, // Set low retry count for test
+      retryCount: 2, // Set low retry count for test
       retryDelay: 3000, // 3 second retry delay
     }
 
@@ -2155,7 +2155,7 @@ describe("setup and teardown", function () {
     })
 
     
-    it("should retry 7 times at 3 seconds between retries and exit", async () => {
+    it("should retry 2 times at 3 seconds between retries and exit", async () => {
       
       await lib.waitFor(() => watcher.logRecords.some(r => r.component === 'index' && /shutdown event with code 1/i.test(r.message)), 120000)
       expect(watcher.logRecords.some(r => r.component === 'index' && /shutdown event with code 1/i.test(r.message))).to.be.true
@@ -2191,7 +2191,7 @@ describe("setup and teardown", function () {
       logLevel: "verbose",
       scanInterval: 60000,
       cargoSize: 2,
-      retryCount: 7, // Set low retry count for test
+      retryCount: 2, // Set low retry count for test
       retryDelay: 7000, // 7 second retry delay
     }
 
@@ -2231,7 +2231,7 @@ describe("setup and teardown", function () {
       expect(watcher.logRecords.some(r => r.component === 'index' && r.message === 'Alarm raised: authOffline')).to.be.true
     })
 
-    it("should retry 7 times at 3 seconds between retries and exit", async () => {
+    it("should retry 2 times at 3 seconds between retries and exit", async () => {
       
       await lib.waitFor(() => watcher.logRecords.some(r => r.component === 'index' && /shutdown event with code 2/i.test(r.message)), 120000)
       expect(watcher.logRecords.some(r => r.component === 'index' && /shutdown event with code 2/i.test(r.message))).to.be.true
