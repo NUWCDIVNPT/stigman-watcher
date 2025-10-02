@@ -1624,10 +1624,9 @@ describe("setup and teardown", function () {
       await lib.waitFor(() => watcher.logRecords.some(r => r.component === 'index' && r.message === 'Alarm lowered: apiOffline'), 20000)
       expect(watcher.logRecords.some(r => r.component === 'index' && r.message === 'Alarm lowered: apiOffline')).to.be.true
     })
-
   })
 
-  describe("Scan Mode, stop api and go api offline, come back up, then take api back down and eventually exit", async function () {
+  describe("Scan Mode, stop api and go api offline, come back up and process the failed batch ", async function () {
     this.timeout(200_000)
     let db, auth, api
     let watcher
@@ -1711,7 +1710,7 @@ describe("setup and teardown", function () {
     })
   })
 
-  describe("Start watcher without an API", function () {
+  describe("Start watcher without an API eventually exit", function () {
 
     this.timeout(120_000)
     let db, auth
@@ -1732,6 +1731,8 @@ describe("setup and teardown", function () {
       logLevel: "verbose",
       addExisting: true,
       cargoSize: 2,
+      retryCount: 3,
+      retryDelay: 2000,
     }
 
     before(async () => {
@@ -1752,12 +1753,13 @@ describe("setup and teardown", function () {
       expect(watcher.logRecords.some(r => r.component === 'index' && r.message === 'Alarm raised: apiOffline')).to.be.true
     })
 
-    it.skip("should exit but currently hangs so modify this test when fixed for now skip", async () => {
-      expect(1).to.equal(1)
+    it("should retry to connect to api service 3 times and eventually exit with code 1", async () => {
+      await lib.waitFor(() => watcher.logRecords.some(r => r.component === 'index' && /shutdown event with code 1/i.test(r.message)), 200020)
+      expect(watcher.logRecords.some(r => r.component === 'index' && /shutdown event with code 1/i.test(r.message))).to.be.true
     })
   })
 
-  describe("Start watcher without an auth service", function () {
+  describe("Start watcher without an auth service eventually exit", function () {
 
     this.timeout(120_000)
     let db, auth, api
@@ -1778,6 +1780,8 @@ describe("setup and teardown", function () {
       logLevel: "verbose",
       addExisting: true,
       cargoSize: 2,
+      retryCount: 3,
+      retryDelay: 2000,
     }
 
     before(async () => {
@@ -1809,9 +1813,86 @@ describe("setup and teardown", function () {
       expect(watcher.logRecords.some(r => r.component === 'index' && r.message === 'Alarm raised: authOffline')).to.be.true
     })
 
-    it.skip("should exit but currently hangs so modify this test when fixed for now skip", async () => {
-      expect(1).to.equal(1)
+    it("should retry to connect to aujth service 3 times and eventually exit with code 2", async () => {
+      await lib.waitFor(() => watcher.logRecords.some(r => r.component === 'index' && /shutdown event with code 2/i.test(r.message)), 200020)
+      expect(watcher.logRecords.some(r => r.component === 'index' && /shutdown event with code 2/i.test(r.message))).to.be.true
     })
+  })
+
+  describe("should start watcher without auth service, then start auth and recover", function () {
+
+    this.timeout(180_000)
+    let db, auth, api
+    let watcher
+    const env = {
+      apiBase: "http://localhost:54001/api",
+      authority: `http://localhost:8080`,
+      collectionId: "1",
+      clientId: "stigman-watcher",
+      clientSecret: "954fd71a-dad6-47ab-8035-060268f3d396",
+      path: "test/e2e/scrapFiles",
+      oneShot: true,
+      mode: "events",
+      historyFile: "test/e2e/e2e-history.txt",
+      responseTimeout: 5000,
+      historyWriteInterval: 10000,
+      cargoDelay: 7000,
+      logLevel: "verbose",
+      addExisting: true,
+      cargoSize: 2,
+      retryCount: 20,
+      retryDelay: 2000,
+    }
+
+    before(async () => {
+      await lib.initNetwork()
+      db = await lib.startDb()
+      auth = await lib.startAuth()
+      api = await lib.startApi()
+
+      const { collection } = await lib.initWatcherTestCollection()
+      env.collectionId = collection.collectionId
+      await lib.uploadTestStig('VPN_STIG.xml')
+      await auth.stop()
+      watcher = await lib.runWatcher({ entry: 'index.js', env: env, })
+    })
+
+    after(async () => {
+      try {
+        if (watcher && watcher.process) {
+          watcher.process.kill()
+        }
+      } catch (e) {}
+      lib.stopProcesses([api, auth, db])
+    })
+
+    it("should start up and try to connect to the api and raise alarm authOffline", async () => {
+      // ensure watcher finished start/preflight and is running
+      await lib.waitFor(() => watcher.logRecords.some(r => r.message === 'running'), 20000)
+      await lib.waitFor(() => watcher.logRecords.some(r => r.component === 'index' && r.message === 'Alarm raised: authOffline'), 20000)
+      expect(watcher.logRecords.some(r => r.component === 'index' && r.message === 'Alarm raised: authOffline')).to.be.true
+    })
+
+    it("should start the auth service", async () => {
+      auth = await lib.startAuth()
+      await lib.waitFor(() => watcher.logRecords.some(r => r.component === 'index' && r.message === 'Alarm lowered: authOffline'), 120000)
+      expect(watcher.logRecords.some(r => r.component === 'index' && r.message === 'Alarm lowered: authOffline')).to.be.true
+    })
+
+
+    it("Should succesfully complete preflight services check", async () => {
+      await lib.waitFor(() => watcher.logRecords.some(r => r.message === 'preflight api requests succeeded'), 120000)
+      expect(watcher.logRecords.some(r => r.message === 'preflight api requests succeeded')).to.be.true
+    })
+
+    it("should finish one-shot and exit with code 0", async () => {
+      await lib.waitFor(() => watcher.logRecords.some(r => r.component === 'index' && /shutdown event with code 0/i.test(r.message)), 120000)
+      expect(watcher.logRecords.some(r => r.component === 'index' && /shutdown event with code 0/i.test(r.message))).to.be.true
+
+      await lib.waitFor(() => watcher.logRecords.some(r => r.component === 'cargo' && /finished one shot mode/i.test(r.message)), 20000)
+      expect(watcher.logRecords.some(r => r.component === 'cargo' && /finished one shot mode/i.test(r.message))).to.be.true
+    })
+    
   })
 
   describe("Start watcher against a non existent collection (stimulates noGrant alarm)", function () {
@@ -1959,6 +2040,7 @@ describe("setup and teardown", function () {
         }
       } catch (e) {}
       lib.stopProcesses([api, auth, db])
+      lib.clearDirectory(env.path)
     })
 
     it('starts running and begins watching', async () => {
@@ -2099,7 +2181,6 @@ describe("setup and teardown", function () {
 
     before(async () => {
       await lib.clearHistoryFileContents(env.historyFile)
-      await lib.clearDirectory(env.path)
       await lib.initNetwork()
       db = await lib.startDb()
       auth = await lib.startAuth()
