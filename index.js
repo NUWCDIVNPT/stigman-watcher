@@ -143,21 +143,21 @@ async function preflightServices () {
   const [remoteApiVersion] = await runWithAlarmRetry('apiOffline', () => api.getDefinition('$.info.version'))
   logger.info({ component, message: `preflight API version`, remoteApiVersion})
 
-  await runWithAlarmRetry('authOffline', () => auth.getOpenIDConfiguration())
-  await runWithAlarmRetry('noToken',       () => auth.getToken())
+  await runWithAlarmRetry('authOffline', auth.getOpenIDConfiguration)
+  await runWithAlarmRetry('noToken', auth.getToken)
 
   logger.info({ component, message: `preflight token request succeeded`})
 
   await runWithAlarmRetry('apiOffline', () => api.getCollection(options.collectionId))
-  await runWithAlarmRetry('apiOffline', () => api.getInstalledStigs())
-  await runWithAlarmRetry('apiOffline', () => api.getScapBenchmarkMap())
+  await runWithAlarmRetry('apiOffline', api.getInstalledStigs)
+  await runWithAlarmRetry('apiOffline', api.getScapBenchmarkMap)
   
   setInterval(refreshCollection, 10 * 60000)
   
   // OAuth scope 'stig-manager:user:read' was not required for early versions of Watcher
   // For now, fail gracefully if we are blocked from calling /user
   try {
-    await runWithAlarmRetry('apiOffline', () => api.getUser())
+    await runWithAlarmRetry('apiOffline', api.getUser)
     setInterval(refreshUser, 10 * 60000)
   }
   catch (e) {
