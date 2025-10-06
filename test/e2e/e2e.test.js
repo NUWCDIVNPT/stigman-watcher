@@ -2398,5 +2398,158 @@ describe("setup and teardown", function () {
       expect(authRetryLogs.length).to.be.at.least(10)
     })
   })
+
+  describe("Event Mode, cargo size 1, single file should instantly start batch processing. ", function () {
+    this.timeout(120_000)
+    let db, auth, api
+    let watcher
+    const env = {
+      apiBase: "http://localhost:54001/api",
+      authority: `http://localhost:8080`,
+      collectionId: "1",
+      clientId: "stigman-watcher",
+      clientSecret: "954fd71a-dad6-47ab-8035-060268f3d396",
+      path: "test/e2e/testFiles",
+      oneShot: false,
+      mode: "events",
+      historyFile: "test/e2e/e2e-history.txt",
+      responseTimeout: 10000,
+      historyWriteInterval: 10000,
+      cargoDelay: 8000, 
+      logLevel: "verbose",
+      cargoSize: 1,
+      addExisting: true, // process existing files
+    }
+
+    before(async () => {
+      await lib.clearHistoryFileContents(env.historyFile)
+      await lib.initNetwork()
+      db = await lib.startDb()
+      auth = await lib.startAuth()
+      api = await lib.startApi()
+    
+      const { collection } = await lib.initWatcherTestCollection()
+      env.collectionId = collection.collectionId
+      await lib.uploadTestStig('VPN_STIG.xml')
+      watcher = await lib.runWatcher({ entry: 'index.js', consoleLog: true, env: env, })
+    })
+
+    after(async () => {
+      try {
+        if (watcher && watcher.process) {
+          watcher.process.kill()
+        }
+      } catch (e) {}
+    })
+
+    it('starts running and begins watching', async () => {
+      await lib.waitFor(() => watcher.logRecords.some(r => r.message === 'running'), 30000)
+      expect(watcher.logRecords.some(r => r.message === 'running')).to.be.true
+      
+      await lib.waitFor(() => watcher.logRecords.some(r => r.message === 'watching'), 20000)
+      expect(watcher.logRecords.some(r => r.message === 'watching')).to.be.true
+    })
+
+    it('should receive file system event for test file. ', async () => {
+      
+      // Wait for file system event
+      await lib.waitFor(() => watcher.logRecords.some(r => 
+        r.component === 'events' && 
+        r.message === 'file system event'), 30000)
+      
+      const fsEvent = watcher.logRecords.find(r => 
+        r.component === 'events' && 
+        r.message === 'file system event' && 
+        r.file && r.file.endsWith('test.ckl')
+      )
+      expect(fsEvent).to.exist
+      expect(fsEvent.event).to.equal('add')
+    })
+
+  
+    it('should parse and queue results for the file', async () => {
+      await lib.waitFor(() => watcher.logRecords.some(r => 
+        r.message === 'results queued' && 
+        r.file && r.file.endsWith('test.ckl')
+      ), 30000)
+      
+      const result = watcher.logRecords.find(r => 
+        r.message === 'results queued' && 
+        r.file && r.file.endsWith('test.ckl')
+      )
+      expect(result).to.exist
+      expect(result.target).to.equal('test')
+    })
+
+    it('should start a batch instantly', async () => {
+      // Wait for cargo delay to trigger batch processing
+      await lib.waitFor(() => watcher.logRecords.some(r => 
+        r.component === 'cargo' && 
+        r.message === 'batch started'
+      ), 20000) 
+      
+      const batchStart = watcher.logRecords.find(r => 
+        r.component === 'cargo' && 
+        r.message === 'batch started'
+      )
+      expect(batchStart).to.exist
+      expect(batchStart.size).to.equal(1) 
+      expect(batchStart.batchId).to.equal(1) 
+    })
+
+    it('should process the batch and complete successfully', async () => {
+      // Wait for asset and stig data
+      await lib.waitFor(() => watcher.logRecords.some(r => 
+        r.component === 'cargo' && 
+        r.message === 'asset data received'
+      ), 30000)
+      expect(watcher.logRecords.some(r => 
+        r.component === 'cargo' && 
+        r.message === 'asset data received'
+      )).to.be.true
+
+      await lib.waitFor(() => watcher.logRecords.some(r => 
+        r.component === 'cargo' && 
+        r.message === 'stig data received'
+      ), 30000)
+      expect(watcher.logRecords.some(r => 
+        r.component === 'cargo' && 
+        r.message === 'stig data received'
+      )).to.be.true
+
+      // Wait for batch to end
+      await lib.waitFor(() => watcher.logRecords.some(r => 
+        r.component === 'cargo' && 
+        r.message === 'batch ended' && 
+        r.batchId === 1
+      ), 30000)
+      
+      const batchEnd = watcher.logRecords.find(r => 
+        r.component === 'cargo' && 
+        r.message === 'batch ended' && 
+        r.batchId === 1
+      )
+      expect(batchEnd).to.exist
+    })
+
+    it('should create the asset and post reviews', async () => {
+      // Check for asset creation
+      const assetCreated = watcher.logRecords.find(r => 
+        r.component === 'cargo' && 
+        r.message === 'asset created' && 
+        r.asset && r.asset.name === 'test'
+      )
+      expect(assetCreated).to.exist
+
+      // Check for posted reviews
+      const reviewsPosted = watcher.logRecords.find(r => 
+        r.component === 'cargo' && 
+        r.message === 'posted reviews' && 
+        r.asset && r.asset.name === 'test'
+      )
+      expect(reviewsPosted).to.exist
+    })
+
+  })
 })
 
