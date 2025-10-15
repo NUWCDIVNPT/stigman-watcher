@@ -22,22 +22,22 @@
     "@nuwcdivnpt/stig-manager-client-modules": "^1.5.7",
     "atob": "^2.1.2",
     "better-queue": "^3.8.10",
-    "chokidar": "^3.5.1",
-    "commander": "^7.2.0",
-    "dotenv": "^8.2.0",
+    "chokidar": "^4.0.3",
+    "commander": "^14.0.1",
+    "dotenv": "^17.2.3",
     "fast-glob": "3.3.3",
-    "got": "^11.8.2",
+    "got": "^14.5.0",
     "jsonwebtoken": "^9.0.0",
     "n-readlines": "^1.0.1",
-    "prompt-sync": "4.1.6",
-    "serialize-error": "^8.0.1",
-    "winston": "^3.3.3"
+    "prompt-sync": "^4.2.0",
+    "serialize-error": "^12.0.0",
+    "winston": "^3.18.3"
   },
   "devDependencies": {
     "c8": "^10.1.3",
-    "chai": "^6.0.1",
-    "esbuild": "^0.25.9",
-    "mocha": "^11.7.2",
-    "testcontainers": "^11.5.1"
+    "chai": "^6.2.0",
+    "esbuild": "^0.25.11",
+    "mocha": "^11.7.4",
+    "testcontainers": "^11.7.1"
   }
 }
