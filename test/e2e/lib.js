@@ -86,7 +86,7 @@ export async function runWatcherPromise ({
   ...(typeof (env.retryInterval ?? env.retryDelay) !== 'undefined' ? ['--retry-interval', `${env.retryInterval ?? env.retryDelay}`] : []),
   ...(typeof env.retryCount !== 'undefined' ? ['--retry-count', `${env.retryCount}`] : []),
       ...(env.addExisting ? ['--add-existing'] : [])
-    ]
+    ].filter(Boolean)
 
     const watcherEnv = {
       ...env,
@@ -186,7 +186,7 @@ export async function runWatcher ({
   ...(typeof (env.retryInterval ?? env.retryDelay) !== 'undefined' ? ['--retry-interval', `${env.retryInterval ?? env.retryDelay}`] : []),
   ...(typeof env.retryCount !== 'undefined' ? ['--retry-count', `${env.retryCount}`] : []),
       ...(env.addExisting ? ['--add-existing'] : [])
-    ]
+    ].filter(Boolean)
 
     const options = []
     if (inspect) {
