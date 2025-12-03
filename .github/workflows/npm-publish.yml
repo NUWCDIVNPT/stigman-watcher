@@ -25,5 +25,6 @@ jobs:
       - name: Update npm
         run: npm install -g npm@latest
       - run: npm ci
-      - run: unset NODE_AUTH_TOKEN
-      - run: npm publish --dry-run --provenance --access public
+      - run: |
+          unset NODE_AUTH_TOKEN
+          npm publish --dry-run --provenance --access public
