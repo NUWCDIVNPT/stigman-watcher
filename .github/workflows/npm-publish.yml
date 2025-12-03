@@ -25,6 +25,9 @@ jobs:
       - name: Update npm
         run: npm install -g npm@latest
       - run: npm whoami
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       # - run: npm ci
       # - run: npm publish --dry-run --provenance --access public
       #   env:
