@@ -24,8 +24,8 @@ describe("backpressure: bounded cargo depth under load", function () {
     mode: "scan",
     historyFile: "test/e2e/bp-history.txt",
     responseTimeout: 10000,
-    historyWriteInterval: 5000,
-    cargoDelay: 100,
+    historyWriteInterval: 10000,
+    cargoDelay: 2000,
     logLevel: "verbose",
     cargoSize: CARGO_SIZE,
   }
@@ -60,6 +60,7 @@ describe("backpressure: bounded cargo depth under load", function () {
     watcher = await lib.runWatcherPromise({
       entry: "index.js",
       env,
+      consoleLog: true,
       resolveOnClose: true,
       resolveOnMessage: `received shutdown event with code 0, exiting`
     })
