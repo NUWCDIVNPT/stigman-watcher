@@ -1,5 +1,5 @@
 {
   "extension": ["js"],
-  "spec": "test/**/*.test.js",
+  "spec": ["test/scan/**/*.test.js", "test/e2e/e2e.test.js"],
   "file": ["test/e2e/env.js"]
 }
