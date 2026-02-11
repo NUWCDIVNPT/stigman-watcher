@@ -1,5 +1,6 @@
 {
   "extension": ["js"],
   "spec": "test/**/*.test.js",
+  "ignore": ["test/e2e/backpressure.test.js"],
   "file": ["test/e2e/env.js"]
 }

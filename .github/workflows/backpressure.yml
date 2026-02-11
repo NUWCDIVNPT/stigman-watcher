@@ -1,0 +1,37 @@
+name: Backpressure Test
+on:
+  workflow_dispatch:
+  push:
+    branches:
+        - main
+    paths:
+        - "lib/**"
+        - "index.js"
+        - "test/**"
+        - ".github/workflows/backpressure.yml"
+  pull_request:
+    branches:
+        - main
+    paths:
+        - "lib/**"
+        - "index.js"
+        - "test/**"
+        - ".github/workflows/backpressure.yml"
+jobs:
+  backpressure:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "20.x"
+    - name: Install app dependencies
+      run: npm ci
+    - name: Create .env file
+      run: echo -e "WATCHER_COLLECTION=1\nWATCHER_API_BASE=url\nWATCHER_AUTHORITY=auth\nWATCHER_CLIENT_ID=clientId\nWATCHER_CLIENT_SECRET=secret" > .env
+    - name: Run backpressure test
+      run: |
+        echo '{"spec":"test/e2e/backpressure.test.js","file":["test/e2e/env.js"]}' > .mocharc.json
+        npx mocha
