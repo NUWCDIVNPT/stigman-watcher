@@ -2325,7 +2325,7 @@ describe("setup and teardown", function () {
     })
   })
 
-  describe("Should retry indefinitely (retryCount=0) and make at least 10 attempts (for testing sake stop at 10)", function () {
+  describe("Should retry indefinitely (retryCount=0) and make at least 6 attempts (more than default retryCount of 5)", function () {
     this.timeout(180_000)
     let db, auth, api
     let watcher
@@ -2339,9 +2339,9 @@ describe("setup and teardown", function () {
       oneShot: false,
       mode: "events",
       historyFile: "test/e2e/e2e-history.txt",
-      responseTimeout: 10000,
+      responseTimeout: 5000,
       historyWriteInterval: 10000,
-      cargoDelay: 8000,
+      cargoDelay: 2000,
       logLevel: "verbose",
       cargoSize: 5,
       addExisting: false,
@@ -2374,7 +2374,7 @@ describe("setup and teardown", function () {
       lib.stopProcesses([api, auth, db])
     })
 
-    it('starts running and then retries indefinitely (observe at least 10 retries)', async () => {
+    it('starts running and then retries indefinitely (observe at least 6 retries)', async () => {
       await lib.waitFor(() => watcher.logRecords.some(r => r.message === 'watching'), 20000)
       expect(watcher.logRecords.some(r => r.message === 'watching')).to.be.true
 
@@ -2388,14 +2388,14 @@ describe("setup and teardown", function () {
       await lib.waitFor(() => watcher.logRecords.some(r => r.component === 'index' && r.message === 'Alarm raised: authOffline'), 60000)
       expect(watcher.logRecords.some(r => r.component === 'index' && r.message === 'Alarm raised: authOffline')).to.be.true
 
-      // wait until we have recorded at least 10 retry attempts
+      // wait until we have recorded at least 6 retry attempts (more than default retryCount of 5)
       await lib.waitFor(() => {
         const authRetryLogs = watcher.logRecords.filter(r => r.component === 'auth' && r.message === 'Testing if OIDC Provider is online')
-        return authRetryLogs.length >= 10
+        return authRetryLogs.length >= 6
       }, 120000)
 
       const authRetryLogs = watcher.logRecords.filter(r => r.component === 'auth' && r.message === 'Testing if OIDC Provider is online')
-      expect(authRetryLogs.length).to.be.at.least(10)
+      expect(authRetryLogs.length).to.be.at.least(6)
     })
   })
 
