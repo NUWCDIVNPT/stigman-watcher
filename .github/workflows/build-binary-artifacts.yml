@@ -10,6 +10,7 @@ on:
       - "lib/**"
       - "index.js"
       - "build.sh"
+      - "sea-config.json"
       - "nuwcdivnpt-bot.gpg.asc"
       - ".github/workflows/build-binary-artifacts.yml"
 jobs:
@@ -22,6 +23,11 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
 
       - name: run build script
         id: run_build_script
