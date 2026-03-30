@@ -9,6 +9,8 @@ on:
         - "index.js"
         - "test/**"
         - ".github/workflows/testing.yml"
+        - "package.json"
+        - "package-lock.json"
   pull_request:
     branches:
         - main
@@ -17,6 +19,8 @@ on:
         - "index.js"
         - "test/**"
         - ".github/workflows/testing.yml"
+        - "package.json"
+        - "package-lock.json"
 jobs:
   build_test:
     runs-on: ubuntu-latest
