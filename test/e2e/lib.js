@@ -365,6 +365,7 @@ export async function createCollection (collectionPost, userId) {
           unreviewedCommented: 'informational',
           emptyDetail: 'replace',
           emptyComment: 'ignore',
+          updateAssetProps: false,
           allowCustom: true
         }
       },
@@ -466,6 +467,25 @@ export async function createCkl (templatePath, outputPath, newHostName) {
     `<HOST_NAME>${newHostName}</HOST_NAME>`
   )
   await writeFile(outputPath, xml, 'utf8')
+}
+
+export async function createCklWithProps (templatePath, outputPath, { hostName, ip, fqdn, mac }) {
+  let xml = await readFile(templatePath, 'utf8')
+  if (hostName) xml = xml.replace(/<HOST_NAME>.*?<\/HOST_NAME>/is, `<HOST_NAME>${hostName}</HOST_NAME>`)
+  if (ip) xml = xml.replace(/<HOST_IP>.*?<\/HOST_IP>/is, `<HOST_IP>${ip}</HOST_IP>`)
+  if (fqdn) xml = xml.replace(/<HOST_FQDN>.*?<\/HOST_FQDN>/is, `<HOST_FQDN>${fqdn}</HOST_FQDN>`)
+  if (mac) xml = xml.replace(/<HOST_MAC>.*?<\/HOST_MAC>/is, `<HOST_MAC>${mac}</HOST_MAC>`)
+  await writeFile(outputPath, xml, 'utf8')
+}
+
+export async function getAsset (assetId) {
+  const res = await fetch(`http://${apiHost}:${apiPort}/api/assets/${assetId}`, {
+    headers: {
+      Authorization: `Bearer ${auth.getToken({ username: 'stigman-watcher', privileges: ['create_collection', 'admin'] })}`
+    }
+  })
+  if (!res.ok) throw new Error(`HTTP error, Status: ${res.status}`)
+  return res.json()
 }
 
 export async function clearDirectory (directoryPath) {
