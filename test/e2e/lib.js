@@ -365,7 +365,6 @@ export async function createCollection (collectionPost, userId) {
           unreviewedCommented: 'informational',
           emptyDetail: 'replace',
           emptyComment: 'ignore',
-          updateAssetProps: false,
           allowCustom: true
         }
       },

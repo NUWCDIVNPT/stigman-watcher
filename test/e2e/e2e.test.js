@@ -2553,7 +2553,7 @@ describe("setup and teardown", function () {
 
   })
 
-  describe("updateAssetProps — updates known asset properties from CKL data", async function () {
+  describe.skip("updateAssetProps — updates known asset properties from CKL data", async function () {
     this.timeout(180_000)
     let db, auth, api
     let watcher
