@@ -85,7 +85,9 @@ export async function runWatcherPromise ({
       `${env.cargoSize}`,
   ...(typeof (env.retryInterval ?? env.retryDelay) !== 'undefined' ? ['--retry-interval', `${env.retryInterval ?? env.retryDelay}`] : []),
   ...(typeof env.retryCount !== 'undefined' ? ['--retry-count', `${env.retryCount}`] : []),
-      ...(env.addExisting ? ['--add-existing'] : [])
+      ...(env.addExisting ? ['--add-existing'] : []),
+      ...(env.requestScope ? ['--request-scope', env.requestScope] : []),
+      ...(env.extraScopes ? ['--extra-scopes', env.extraScopes] : [])
     ]
 
     const watcherEnv = {
@@ -185,7 +187,9 @@ export async function runWatcher ({
       `${env.cargoSize}`,
   ...(typeof (env.retryInterval ?? env.retryDelay) !== 'undefined' ? ['--retry-interval', `${env.retryInterval ?? env.retryDelay}`] : []),
   ...(typeof env.retryCount !== 'undefined' ? ['--retry-count', `${env.retryCount}`] : []),
-      ...(env.addExisting ? ['--add-existing'] : [])
+      ...(env.addExisting ? ['--add-existing'] : []),
+      ...(env.requestScope ? ['--request-scope', env.requestScope] : []),
+      ...(env.extraScopes ? ['--extra-scopes', env.extraScopes] : [])
     ]
 
     const options = []
