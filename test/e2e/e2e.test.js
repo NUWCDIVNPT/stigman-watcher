@@ -2440,6 +2440,7 @@ describe("setup and teardown", function () {
           watcher.process.kill()
         }
       } catch (e) {}
+      lib.stopProcesses([api, auth, db])
     })
 
     it('starts running and begins watching', async () => {
@@ -2589,6 +2590,11 @@ describe("setup and teardown", function () {
     })
 
     after(async () => {
+      try {
+        if (watcher && watcher.process) {
+          watcher.process.kill()
+        }
+      } catch (e) {}
       lib.stopProcesses([api, auth, db])
     })
 
