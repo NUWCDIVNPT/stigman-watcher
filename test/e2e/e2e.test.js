@@ -2638,7 +2638,7 @@ describe("setup and teardown", function () {
       }, collection.collectionId)
 
       // Create CKL with different properties for the same host
-      lib.clearDirectory(env.path)
+      await lib.clearDirectory(env.path)
       await lib.createCklWithProps('test/e2e/testFiles/test.ckl', `${env.path}/test.ckl`, {
         hostName: 'test',
         ip: '10.0.0.2',
@@ -2650,8 +2650,10 @@ describe("setup and teardown", function () {
     })
 
     after(async () => {
-      lib.stopProcesses([api, auth, db])
-      lib.clearDirectory(env.path)
+      await Promise.all([
+        lib.stopProcesses([api, auth, db]),
+        lib.clearDirectory(env.path)
+      ])
     })
 
     it('should not create a new asset (asset was pre-existing)', async () => {

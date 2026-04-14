@@ -482,7 +482,7 @@ export async function createCklWithProps (templatePath, outputPath, { hostName, 
 }
 
 export async function getAsset (assetId) {
-  const res = await fetch(`http://${apiHost}:${apiPort}/api/assets/${assetId}`, {
+  const res = await fetch(`http://${apiHost ? apiHost : "localhost"}:${apiPort ? apiPort : 54001}/api/assets/${assetId}`, {
     headers: {
       Authorization: `Bearer ${auth.getToken({ username: 'stigman-watcher', privileges: ['create_collection', 'admin'] })}`
     }
