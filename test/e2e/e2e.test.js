@@ -2441,6 +2441,7 @@ describe("setup and teardown", function () {
           watcher.process.kill()
         }
       } catch (e) {}
+      lib.stopProcesses([api, auth, db])
     })
 
     it('starts running and begins watching', async () => {
@@ -2680,6 +2681,75 @@ describe("setup and teardown", function () {
       expect(watcher.logRecords.some(r => r.component === 'cargo' && r.message === 'finished one shot mode')).to.be.true
       expect(watcher.logRecords.some(r => r.component === 'index' && /shutdown event with code 0/i.test(r.message))).to.be.true
     })
+  })
+
+  describe("One shot mode with WATCHER_REQUEST_SCOPE set", async function () {
+    this.timeout(120_000)
+    let db, auth, api
+    let watcher
+
+    const env = {
+      apiBase: "http://localhost:54001/api",
+      authority: `http://localhost:8080`,
+      collectionId: "1",
+      clientId: "stigman-watcher",
+      clientSecret: "954fd71a-dad6-47ab-8035-060268f3d396",
+      path: "test/e2e/scrapFiles",
+      oneShot: true,
+      mode: "scan",
+      historyFile: "test/e2e/e2e-history.txt",
+      responseTimeout: 10000,
+      historyWriteInterval: 10000,
+      scanInterval: 60000,
+      cargoDelay: 7000,
+      logLevel: "verbose",
+      cargoSize: 15,
+      requestScope: "api://test-app-id/.default",
+      extraScopes: "stig-manager:extra-scope"
+    }
+
+    before(async () => {
+      await lib.clearHistoryFileContents(env.historyFile)
+      await lib.initNetwork()
+      db = await lib.startDb()
+      auth = await lib.startAuth()
+      api = await lib.startApi()
+      const { user, collection } = await lib.initWatcherTestCollection()
+      env.collectionId = collection.collectionId
+      watcher = await lib.runWatcherPromise({ entry: "index.js", env, resolveOnMessage: `received shutdown event with code 0, exiting` })
+    })
+
+    after(async () => {
+      try {
+        if (watcher && watcher.process) {
+          watcher.process.kill()
+        }
+      } catch (e) {}
+      lib.stopProcesses([api, auth, db])
+    })
+
+    it("should use only requestScope as the token POST form.scope", async () => {
+      const tokenResponse = watcher.logRecords.find(r =>
+        r.message === 'http response' &&
+        r.request?.form?.grant_type === 'client_credentials'
+      )
+      expect(tokenResponse).to.exist
+      expect(tokenResponse.request.form.scope).to.equal(env.requestScope)
+    })
+
+    it("should not include default stig-manager scopes or extra scopes in the token request", async () => {
+      const tokenResponse = watcher.logRecords.find(r =>
+        r.message === 'http response' &&
+        r.request?.form?.grant_type === 'client_credentials'
+      )
+      expect(tokenResponse).to.exist
+      const scope = tokenResponse.request.form.scope
+      expect(scope).to.not.include('stig-manager:stig:read')
+      expect(scope).to.not.include('stig-manager:collection')
+      expect(scope).to.not.include('stig-manager:user:read')
+      expect(scope).to.not.include('stig-manager:extra-scope')
+    })
+
   })
 })
 
