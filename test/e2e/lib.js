@@ -391,7 +391,7 @@ export async function createCollection (collectionPost, userId) {
 
   const username = 'stigmanadmin'
   const res = await fetch(
-    `http://${apiHost ? apiHost : "localhost"}:${apiPort ? apiPort : 54001}/api/collections?elevate=true&projection=grants&projection=labels`,
+    `http://${apiHost ? apiHost : "localhost"}:${apiPort ? apiPort : 54001}/api/collections?projection=grants&projection=labels`,
     {
       method: 'POST',
       headers: {
