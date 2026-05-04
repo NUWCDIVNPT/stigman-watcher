@@ -7,6 +7,7 @@
 # - jq
 # - zip
 # - tar
+# - xz-utils (for extracting the official linux-x64 glibc node tarball)
 # - curl
 
 check_exit_status() {
@@ -52,43 +53,65 @@ printf "\n[BUILD_TASK] Generating SEA blob\n"
 node --experimental-sea-config sea-config.json
 check_exit_status "SEA blob generation" 3
 
-# Linux binary (musl-linked via Alpine Docker for broad compatibility)
-printf "\n[BUILD_TASK] Building Linux binary (musl-linked via Alpine)\n"
+# Linux musl binary (Alpine Docker — for Alpine/distroless/scratch containers)
+printf "\n[BUILD_TASK] Building Linux musl binary (via Alpine)\n"
 NODE_FULL_VERSION=$(docker run --rm -v "$PWD":/app -w /app node:24-alpine sh -c "
-  cp \$(command -v node) bin/stigman-watcher-linuxstatic && \
-  npx postject bin/stigman-watcher-linuxstatic NODE_SEA_BLOB sea-prep.blob \
+  cp \$(command -v node) bin/stigman-watcher-linux-musl && \
+  npx postject bin/stigman-watcher-linux-musl NODE_SEA_BLOB sea-prep.blob \
     --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2 && \
   node -e 'console.log(process.version)'
 ")
-check_exit_status "Building Linux Binary" 4
+check_exit_status "Building Linux musl Binary" 4
 
-printf "[BUILD_TASK] Alpine Node version: $NODE_FULL_VERSION\n"
+# Same Node version is reused for the glibc and Windows targets so the SEA blob
+# stays portable across all three binaries (useCodeCache/useSnapshot are off).
+[ -n "$NODE_FULL_VERSION" ] || { echo "[BUILD_TASK] NODE_FULL_VERSION empty — Alpine step output capture failed"; exit 4; }
+printf "[BUILD_TASK] Node version (shared across targets): $NODE_FULL_VERSION\n"
+
+# Linux glibc binary (official linux-x64 tarball — for Ubuntu/Debian/RHEL/etc.)
+printf "\n[BUILD_TASK] Downloading Linux glibc Node.js $NODE_FULL_VERSION binary\n"
+curl -fSL -o node-linux-glibc.tar.xz \
+  "https://nodejs.org/dist/${NODE_FULL_VERSION}/node-${NODE_FULL_VERSION}-linux-x64.tar.xz"
+check_exit_status "Downloading Linux glibc Node" 5
+
+printf "\n[BUILD_TASK] Building Linux glibc binary\n"
+tar -xJf node-linux-glibc.tar.xz \
+  --strip-components=2 -C "$bin_dir" \
+  "node-${NODE_FULL_VERSION}-linux-x64/bin/node"
+mv "$bin_dir/node" "$bin_dir/stigman-watcher-linux-glibc"
+npx postject "$bin_dir/stigman-watcher-linux-glibc" NODE_SEA_BLOB sea-prep.blob \
+  --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
+check_exit_status "Building Linux glibc Binary" 6
 
 # Windows binary (download matching Windows node.exe, inject on host)
 printf "\n[BUILD_TASK] Downloading Windows Node.js $NODE_FULL_VERSION binary\n"
 curl -fSL -o node-win.exe \
   "https://nodejs.org/dist/${NODE_FULL_VERSION}/win-x64/node.exe"
-check_exit_status "Downloading Windows Node" 5
+check_exit_status "Downloading Windows Node" 7
 
 printf "\n[BUILD_TASK] Building Windows binary\n"
 cp node-win.exe $bin_dir/stigman-watcher-win.exe
 npx postject $bin_dir/stigman-watcher-win.exe NODE_SEA_BLOB sea-prep.blob \
   --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
-check_exit_status "Building Windows Binary" 6
+check_exit_status "Building Windows Binary" 8
 
-# Windows archive
+# Archives
 windows_archive=$dist_dir/stigman-watcher-win-$version.zip
 printf "\n[BUILD_TASK] Creating $windows_archive\n"
 zip --junk-paths $windows_archive ./dotenv-example $bin_dir/stigman-watcher-win.exe
-check_exit_status "Zipping Windows Archive" 7
+check_exit_status "Zipping Windows Archive" 9
 
-# Linux archive
-linux_archive=$dist_dir/stigman-watcher-linux-$version.tar.gz
-printf "\n[BUILD_TASK] Creating $linux_archive\n"
-tar -czvf $linux_archive --xform='s|^|stigman-watcher/|S' -C . dotenv-example -C $bin_dir stigman-watcher-linuxstatic
-check_exit_status "Tarring linux Archive" 8
+linux_musl_archive=$dist_dir/stigman-watcher-linux-musl-$version.tar.gz
+printf "\n[BUILD_TASK] Creating $linux_musl_archive\n"
+tar -czvf $linux_musl_archive --xform='s|^|stigman-watcher/|S' -C . dotenv-example -C $bin_dir stigman-watcher-linux-musl
+check_exit_status "Tarring Linux musl Archive" 10
+
+linux_glibc_archive=$dist_dir/stigman-watcher-linux-glibc-$version.tar.gz
+printf "\n[BUILD_TASK] Creating $linux_glibc_archive\n"
+tar -czvf $linux_glibc_archive --xform='s|^|stigman-watcher/|S' -C . dotenv-example -C $bin_dir stigman-watcher-linux-glibc
+check_exit_status "Tarring Linux glibc Archive" 11
 
 # Cleanup
-rm -f sea-prep.blob bundle.cjs node-win.exe
+rm -f sea-prep.blob bundle.cjs node-win.exe node-linux-glibc.tar.xz
 
 printf "\n[BUILD_TASK] Done\n"

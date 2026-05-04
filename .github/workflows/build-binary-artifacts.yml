@@ -33,42 +33,52 @@ jobs:
         id: run_build_script
         run: ./build.sh
 
-      - name: Import GPG Key
-        id: import_gpg
-        run: | 
-          if ! echo "${{ secrets.WATCHER_PRIVATE_KEY }}" | gpg --import; then
-            echo "::warning ::Private key GPG Import failed"
-            exit 1
-          fi
-      
       - name: Get version from package.json
         id: package_version
         run: echo "PACKAGE_VERSION=$(jq -r '.version' package.json)" >> $GITHUB_ENV
 
-      - name: Sign Artifacts
-        id: sign_artifacts
+      - name: Smoke test binaries
+        id: smoke_test
         run: |
-         if ! gpg --default-key nuwcdivnpt-bot@users.noreply.github.com --armor --detach-sig ./dist/stigman-watcher-linux-${{ env.PACKAGE_VERSION }}.tar.gz; then
-            echo "::warning ::Linux Signing failed"
+          ver="${{ env.PACKAGE_VERSION }}"
+          # glibc binary on host (ubuntu-latest is glibc)
+          ./bin/stigman-watcher-linux-glibc --version | grep -F "$ver"
+          ./bin/stigman-watcher-linux-glibc --help > /dev/null
+          # musl binary needs an Alpine container to execute
+          docker run --rm -v "$PWD/bin:/bin-mount" node:24-alpine sh -c "
+            /bin-mount/stigman-watcher-linux-musl --version | grep -F '$ver' &&
+            /bin-mount/stigman-watcher-linux-musl --help > /dev/null
+          "
+          # Windows binary can't be smoke-tested on ubuntu-latest without wine; skipped
+
+      - name: Import GPG Key
+        id: import_gpg
+        run: |
+          if ! echo "${{ secrets.WATCHER_PRIVATE_KEY }}" | gpg --import; then
+            echo "::warning ::Private key GPG Import failed"
             exit 1
           fi
-         if ! gpg --default-key nuwcdivnpt-bot@users.noreply.github.com --armor --detach-sig ./dist/stigman-watcher-win-${{ env.PACKAGE_VERSION }}.zip; then
-            echo "::warning ::Windows Signing failed"
-            exit 1
-         fi
-      
-      - name: Verify Signatures
-        id: verify_signatures
+
+      - name: Sign and Verify Artifacts
+        id: sign_artifacts
         working-directory: ./dist
         run: |
-          if ! gpg --verify stigman-watcher-linux-${{ env.PACKAGE_VERSION }}.tar.gz.asc stigman-watcher-linux-${{ env.PACKAGE_VERSION }}.tar.gz; then
-            echo "::warning ::Signature verification for Linux failed"
-            exit 1
-          fi
-          if ! gpg --verify stigman-watcher-win-${{ env.PACKAGE_VERSION }}.zip.asc stigman-watcher-win-${{ env.PACKAGE_VERSION }}.zip; then
-            echo "::warning ::Signature verification for Windows failed"
-            exit 1
-          fi
+          ver="${{ env.PACKAGE_VERSION }}"
+          artifacts=(
+            "stigman-watcher-linux-musl-${ver}.tar.gz"
+            "stigman-watcher-linux-glibc-${ver}.tar.gz"
+            "stigman-watcher-win-${ver}.zip"
+          )
+          for artifact in "${artifacts[@]}"; do
+            if ! gpg --default-key nuwcdivnpt-bot@users.noreply.github.com --armor --detach-sig "$artifact"; then
+              echo "::warning ::Signing failed for $artifact"
+              exit 1
+            fi
+            if ! gpg --verify "${artifact}.asc" "$artifact"; then
+              echo "::warning ::Signature verification failed for $artifact"
+              exit 1
+            fi
+          done
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4

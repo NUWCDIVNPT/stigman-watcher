@@ -19,13 +19,26 @@ The client is suitable for use as a service or daemon, as a scheduled task, in a
 You can install Watcher using one of these methods:
 
 ### Copy a Release binary to a destination of your choice and execute
+
+Two Linux variants are published. Choose by your environment:
+
+- `stigman-watcher-linux-glibc` — for Ubuntu, Debian, RHEL, CentOS, Fedora, etc. (glibc-based distros). This is the right choice for most users.
+- `stigman-watcher-linux-musl` — for Alpine, distroless, and scratch-based container images (musl libc).
+
 ```
-$ ./stigman-watcher-linuxstatic [options]
+$ ./stigman-watcher-linux-glibc [options]
+```
+or
+```
+$ ./stigman-watcher-linux-musl [options]
 ```
 or
 ```
 C:/> stigman-watcher-win.exe [options]
-``` 
+```
+
+If the Linux binary is non-executable after extraction (some archive tools strip the exec bit), run `chmod +x stigman-watcher-linux-*` first.
+
 ### Install globally via NPM and run the module 
 ```
 $ npm install --global @nuwcdivnpt/stigman-watcher
