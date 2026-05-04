@@ -1373,8 +1373,9 @@ describe("setup and teardown", function () {
     })
 
     it("should update stig assignments for the existing asset", async () => {
-      const updated = watcher.logRecords.find(r => r.component === 'cargo' && r.message === "STIG assignments updated")
+      const updated = watcher.logRecords.find(r => r.component === 'cargo' && r.message === "asset updated")
       expect(updated).to.exist
+      expect(updated.updates).to.include('STIG assignments')
       expect(updated.asset).to.exist
       expect(updated.asset.name).to.equal('test')
       expect(updated.asset.stigs && Array.isArray(updated.asset.stigs) && updated.asset.stigs.length).to.equal(1)
@@ -2440,6 +2441,7 @@ describe("setup and teardown", function () {
           watcher.process.kill()
         }
       } catch (e) {}
+      lib.stopProcesses([api, auth, db])
     })
 
     it('starts running and begins watching', async () => {
@@ -2548,6 +2550,206 @@ describe("setup and teardown", function () {
         r.asset && r.asset.name === 'test'
       )
       expect(reviewsPosted).to.exist
+    })
+
+  })
+
+  describe.skip("updateAssetProps — updates known asset properties from CKL data", async function () {
+    this.timeout(180_000)
+    let db, auth, api
+    let watcher
+    let createdAsset
+
+    const env = {
+      apiBase: "http://localhost:54001/api",
+      authority: `http://localhost:8080`,
+      collectionId: "1",
+      clientId: "stigman-watcher",
+      clientSecret: "954fd71a-dad6-47ab-8035-060268f3d396",
+      path: "test/e2e/scrapFiles",
+      oneShot: true,
+      mode: "scan",
+      historyFile: "test/e2e/e2e-history.txt",
+      responseTimeout: 10000,
+      historyWriteInterval: 10000,
+      scanInterval: 60000,
+      cargoDelay: 7000,
+      logLevel: "verbose",
+      cargoSize: 6,
+    }
+
+    before(async () => {
+      await lib.clearHistoryFileContents(env.historyFile)
+      await lib.initNetwork()
+      db = await lib.startDb()
+      auth = await lib.startAuth()
+      api = await lib.startApi()
+
+      // Create collection with updateAssetProps: true
+      const { user } = await lib.initWatcherTestCollection()
+
+      const collectionPost = {
+        name: 'updateAssetPropsTest',
+        description: 'Collection for updateAssetProps testing',
+        settings: {
+          fields: {
+            detail: { enabled: 'always', required: 'findings' },
+            comment: { enabled: 'always', required: 'findings' }
+          },
+          status: {
+            canAccept: true,
+            minAcceptGrant: 2,
+            resetCriteria: 'result'
+          },
+          history: { maxReviews: 2 },
+          importOptions: {
+            autoStatus: {
+              fail: 'submitted',
+              notapplicable: 'submitted',
+              pass: 'submitted'
+            },
+            unreviewed: 'commented',
+            unreviewedCommented: 'informational',
+            emptyDetail: 'replace',
+            emptyComment: 'ignore',
+            updateAssetProps: true,
+            allowCustom: true
+          }
+        },
+        metadata: {},
+        grants: [{ roleId: 4, userId: user.userId }],
+        labels: []
+      }
+      const collection = await lib.createCollection(collectionPost, user.userId)
+      env.collectionId = collection.collectionId
+
+      await lib.uploadTestStig('VPN_STIG.xml')
+
+      // Create a known asset with specific properties and the STIG assigned
+      createdAsset = await lib.createAsset({
+        collectionId: collection.collectionId,
+        name: 'test',
+        ip: '10.0.0.1',
+        fqdn: 'old.example.com',
+        mac: 'AA:BB:CC:DD:EE:FF',
+        noncomputing: false,
+        metadata: {},
+        stigs: ['VPN_SRG_TEST']
+      }, collection.collectionId)
+
+      // Create CKL with different properties for the same host
+      await lib.clearDirectory(env.path)
+      await lib.createCklWithProps('test/e2e/testFiles/test.ckl', `${env.path}/test.ckl`, {
+        hostName: 'test',
+        ip: '10.0.0.2',
+        fqdn: 'new.example.com',
+        mac: '11:22:33:44:55:66'
+      })
+
+      watcher = await lib.runWatcherPromise({ entry: 'index.js', env, resolveOnMessage: `received shutdown event with code 0, exiting` })
+    })
+
+    after(async () => {
+      await Promise.all([
+        lib.stopProcesses([api, auth, db]),
+        lib.clearDirectory(env.path)
+      ])
+    })
+
+    it('should not create a new asset (asset was pre-existing)', async () => {
+      const created = watcher.logRecords.filter(r => r.component === 'cargo' && r.message === 'asset created')
+      expect(created.length).to.equal(0)
+    })
+
+    it('should update asset properties', async () => {
+      const updated = watcher.logRecords.find(r => r.component === 'cargo' && r.message === 'asset updated')
+      expect(updated).to.exist
+      expect(updated.updates).to.include('properties')
+      expect(updated.asset).to.exist
+      expect(updated.asset.name).to.equal('test')
+      expect(updated.asset.ip).to.equal('10.0.0.2')
+      expect(updated.asset.fqdn).to.equal('new.example.com')
+      expect(updated.asset.mac).to.equal('11:22:33:44:55:66')
+    })
+
+    it('should verify updated properties via API', async () => {
+      const asset = await lib.getAsset(createdAsset.assetId)
+      expect(asset.ip).to.equal('10.0.0.2')
+      expect(asset.fqdn).to.equal('new.example.com')
+      expect(asset.mac).to.equal('11:22:33:44:55:66')
+    })
+
+    it('finishes one-shot and shuts down with code 0', async () => {
+      expect(watcher.logRecords.some(r => r.component === 'cargo' && r.message === 'finished one shot mode')).to.be.true
+      expect(watcher.logRecords.some(r => r.component === 'index' && /shutdown event with code 0/i.test(r.message))).to.be.true
+    })
+  })
+
+  describe("One shot mode with WATCHER_REQUEST_SCOPE set", async function () {
+    this.timeout(120_000)
+    let db, auth, api
+    let watcher
+
+    const env = {
+      apiBase: "http://localhost:54001/api",
+      authority: `http://localhost:8080`,
+      collectionId: "1",
+      clientId: "stigman-watcher",
+      clientSecret: "954fd71a-dad6-47ab-8035-060268f3d396",
+      path: "test/e2e/scrapFiles",
+      oneShot: true,
+      mode: "scan",
+      historyFile: "test/e2e/e2e-history.txt",
+      responseTimeout: 10000,
+      historyWriteInterval: 10000,
+      scanInterval: 60000,
+      cargoDelay: 7000,
+      logLevel: "verbose",
+      cargoSize: 15,
+      requestScope: "api://test-app-id/.default",
+      extraScopes: "stig-manager:extra-scope"
+    }
+
+    before(async () => {
+      await lib.clearHistoryFileContents(env.historyFile)
+      await lib.initNetwork()
+      db = await lib.startDb()
+      auth = await lib.startAuth()
+      api = await lib.startApi()
+      const { user, collection } = await lib.initWatcherTestCollection()
+      env.collectionId = collection.collectionId
+      watcher = await lib.runWatcherPromise({ entry: "index.js", env, resolveOnMessage: `received shutdown event with code 0, exiting` })
+    })
+
+    after(async () => {
+      try {
+        if (watcher && watcher.process) {
+          watcher.process.kill()
+        }
+      } catch (e) {}
+      lib.stopProcesses([api, auth, db])
+    })
+
+    it("should use only requestScope as the token POST form.scope", async () => {
+      const tokenResponse = watcher.logRecords.find(r =>
+        r.message === 'http response' &&
+        r.request?.form?.grant_type === 'client_credentials'
+      )
+      expect(tokenResponse).to.exist
+      expect(tokenResponse.request.form.scope).to.equal(env.requestScope)
+    })
+
+    it("should not include default stig-manager scopes or extra scopes in the token request", async () => {
+      const tokenResponse = watcher.logRecords.find(r =>
+        r.message === 'http response' &&
+        r.request?.form?.grant_type === 'client_credentials'
+      )
+      expect(tokenResponse).to.exist
+      const scope = tokenResponse.request.form.scope
+      expect(scope).to.not.include('stig-manager:stig:read')
+      expect(scope).to.not.include('stig-manager:collection')
+      expect(scope).to.not.include('stig-manager:user:read')
+      expect(scope).to.not.include('stig-manager:extra-scope')
     })
 
   })

@@ -85,7 +85,9 @@ export async function runWatcherPromise ({
       `${env.cargoSize}`,
   ...(typeof (env.retryInterval ?? env.retryDelay) !== 'undefined' ? ['--retry-interval', `${env.retryInterval ?? env.retryDelay}`] : []),
   ...(typeof env.retryCount !== 'undefined' ? ['--retry-count', `${env.retryCount}`] : []),
-      ...(env.addExisting ? ['--add-existing'] : [])
+      ...(env.addExisting ? ['--add-existing'] : []),
+      ...(env.requestScope ? ['--request-scope', env.requestScope] : []),
+      ...(env.extraScopes ? ['--extra-scopes', env.extraScopes] : [])
     ]
 
     const watcherEnv = {
@@ -185,7 +187,9 @@ export async function runWatcher ({
       `${env.cargoSize}`,
   ...(typeof (env.retryInterval ?? env.retryDelay) !== 'undefined' ? ['--retry-interval', `${env.retryInterval ?? env.retryDelay}`] : []),
   ...(typeof env.retryCount !== 'undefined' ? ['--retry-count', `${env.retryCount}`] : []),
-      ...(env.addExisting ? ['--add-existing'] : [])
+      ...(env.addExisting ? ['--add-existing'] : []),
+      ...(env.requestScope ? ['--request-scope', env.requestScope] : []),
+      ...(env.extraScopes ? ['--extra-scopes', env.extraScopes] : [])
     ]
 
     const options = []
@@ -387,7 +391,7 @@ export async function createCollection (collectionPost, userId) {
 
   const username = 'stigmanadmin'
   const res = await fetch(
-    `http://${apiHost ? apiHost : "localhost"}:${apiPort ? apiPort : 54001}/api/collections?elevate=true&projection=grants&projection=labels`,
+    `http://${apiHost ? apiHost : "localhost"}:${apiPort ? apiPort : 54001}/api/collections?projection=grants&projection=labels`,
     {
       method: 'POST',
       headers: {
@@ -466,6 +470,25 @@ export async function createCkl (templatePath, outputPath, newHostName) {
     `<HOST_NAME>${newHostName}</HOST_NAME>`
   )
   await writeFile(outputPath, xml, 'utf8')
+}
+
+export async function createCklWithProps (templatePath, outputPath, { hostName, ip, fqdn, mac }) {
+  let xml = await readFile(templatePath, 'utf8')
+  if (hostName) xml = xml.replace(/<HOST_NAME>.*?<\/HOST_NAME>/is, `<HOST_NAME>${hostName}</HOST_NAME>`)
+  if (ip) xml = xml.replace(/<HOST_IP>.*?<\/HOST_IP>/is, `<HOST_IP>${ip}</HOST_IP>`)
+  if (fqdn) xml = xml.replace(/<HOST_FQDN>.*?<\/HOST_FQDN>/is, `<HOST_FQDN>${fqdn}</HOST_FQDN>`)
+  if (mac) xml = xml.replace(/<HOST_MAC>.*?<\/HOST_MAC>/is, `<HOST_MAC>${mac}</HOST_MAC>`)
+  await writeFile(outputPath, xml, 'utf8')
+}
+
+export async function getAsset (assetId) {
+  const res = await fetch(`http://${apiHost ? apiHost : "localhost"}:${apiPort ? apiPort : 54001}/api/assets/${assetId}`, {
+    headers: {
+      Authorization: `Bearer ${auth.getToken({ username: 'stigman-watcher', privileges: ['create_collection', 'admin'] })}`
+    }
+  })
+  if (!res.ok) throw new Error(`HTTP error, Status: ${res.status}`)
+  return res.json()
 }
 
 export async function clearDirectory (directoryPath) {
