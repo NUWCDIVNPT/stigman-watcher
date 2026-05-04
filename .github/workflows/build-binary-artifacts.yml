@@ -21,7 +21,6 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v4
         with:
-          ref: main
           fetch-depth: 0
 
       - name: Set up Node.js
