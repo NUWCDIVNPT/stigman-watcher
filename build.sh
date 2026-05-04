@@ -54,18 +54,26 @@ node --experimental-sea-config sea-config.json
 check_exit_status "SEA blob generation" 3
 
 # Linux musl binary (Alpine Docker — for Alpine/distroless/scratch containers)
+# Inside the container, redirect postject/cp output to stderr so the captured
+# stdout contains only the Node version printed at the end. Both streams are
+# still visible in CI logs.
 printf "\n[BUILD_TASK] Building Linux musl binary (via Alpine)\n"
 NODE_FULL_VERSION=$(docker run --rm -v "$PWD":/app -w /app node:24-alpine sh -c "
-  cp \$(command -v node) bin/stigman-watcher-linux-musl && \
+  cp \$(command -v node) bin/stigman-watcher-linux-musl >&2 && \
   npx postject bin/stigman-watcher-linux-musl NODE_SEA_BLOB sea-prep.blob \
-    --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2 && \
+    --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2 >&2 && \
   node -e 'console.log(process.version)'
 ")
 check_exit_status "Building Linux musl Binary" 4
 
 # Same Node version is reused for the glibc and Windows targets so the SEA blob
 # stays portable across all three binaries (useCodeCache/useSnapshot are off).
-[ -n "$NODE_FULL_VERSION" ] || { echo "[BUILD_TASK] NODE_FULL_VERSION empty — Alpine step output capture failed"; exit 4; }
+# Validate format (vMAJOR.MINOR.PATCH) so a polluted capture fails fast rather
+# than corrupting downstream URLs.
+if ! [[ "$NODE_FULL_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "[BUILD_TASK] NODE_FULL_VERSION not a clean version string: '$NODE_FULL_VERSION'"
+  exit 4
+fi
 printf "[BUILD_TASK] Node version (shared across targets): $NODE_FULL_VERSION\n"
 
 # Linux glibc binary (official linux-x64 tarball — for Ubuntu/Debian/RHEL/etc.)
