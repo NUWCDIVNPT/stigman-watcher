@@ -40,7 +40,7 @@
   "devDependencies": {
     "c8": "^10.1.3",
     "chai": "^6.0.1",
-    "esbuild": "^0.25.9",
+    "esbuild": "^0.28.1",
     "mocha": "11.7.5",
     "testcontainers": "^11.5.1"
   }
