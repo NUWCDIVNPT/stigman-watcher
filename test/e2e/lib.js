@@ -231,7 +231,7 @@ export async function runWatcher ({
 
 export async function startDb () {
   // return the started container so callers can await it
-  const db = await new GenericContainer('mysql:8.0')
+  const db = await new GenericContainer('mysql:8.4')
     .withPullPolicy(PullPolicy.alwaysPull())
     .withEnvironment({ MYSQL_ROOT_PASSWORD: 'rootpw' })
     .withEnvironment({ MYSQL_DATABASE: 'stigman' })
